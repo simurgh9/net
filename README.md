@@ -1,8 +1,8 @@
 # Neural Networks: Multi-layer Perceptron
 
-This repository holds source code and manuscripts of the following article:
+This repository holds the source code and manuscripts of the following article:
 
-1. [Part One](tashfeen.org/net)
+1. [Part One](https://tashfeen.org/net/)
 2. Part Two
     
 In the article we talk about the mathematics and code (using only vanilla Python & Numpy) of a Multi-layer Perceptron.
