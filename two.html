@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- 2020-07-07 Tue 02:07 -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neural Networks: The Backward Pass</title>
+<meta name="generator" content="Org mode">
+<meta name="author" content="Tashfeen, Ahmad">
+<link rel="stylesheet" type="text/css" href="css/org.css"/>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="content">
+<header>
+<h1 class="title">Neural Networks: The Backward Pass</h1>
+<p class="subtitle">Tashfeen, Ahmad</p>
+</header>
+<figure id="orgd922cfb">
+<img src="./media/learning.png" alt="learning.png">
+
+<figcaption><span class="figure-number">Figure 1: </span>Learning from mistakes</figcaption>
+</figure>
+
+
+<div class="abstract">
+<p>
+"Good judgement comes from experience. Experience comes from bad judgement." [<a href="#zins2013have">4</a>] &#x2013; Mullah Nasruddin
+</p>
+
+<p>
+This is the second part of the article<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> Neural Networks in which we demonstrate the mathematics and code of a simple Multi-layer Perceptron. In the <a href="./index.html">first part</a> we talked about the <i>forward pass</i>, now we shall talk about the <i>backward pass</i><sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup>.
+</p>
+
+</div>
+
+
+<div id="outline-container-org83ed39b" class="outline-2">
+<h2 id="org83ed39b"><span class="section-number-2">1</span> Error in the Network</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+We denote our sample examples passed to the <code>Network</code> as <code>X, y</code> Numpy arrays with sets \(\mathcal{X} \subset \mathbb{R}^n\) and \(\mathbf{y}\subset \{0, 1\}^m\) (one-hot encodings), \(n,m \in \mathbb{N}\). With random \((\mathcal{W}, \mathbf{b})\), we have no reason to expect the network to behave in any reasonable way. Right now, it is as good as a guessing machine. How good is a guessing machine though? We need a way to measure the error in the network after we forward-feed some \(\vec{x}\). Let's denote the output of the network at this initial stage for some \(\vec{x} \in \mathcal{X}\) to be \(f(\vec{x}) = \vec{a}^{(L)} = \hat{\vec{y}}\), remember that \(\hat{\vec{y}} \neq \vec{y}\). One way to evaluate the error in the network for some \(\vec{x}\) is as a function of weights and biases \((\mathcal{W}, \mathbf{b})\). We do this by calculating the squared difference between the \(\hat{\vec{y}}\) we get and the \(\vec{y}\) we expect. If we sum up this error and calculate the mean than we have an overall error estimate known as the <a href="https://en.wikipedia.org/wiki/Mean_squared_error">Mean Squared Error</a> (\(MSE\)).
+</p>
+
+\begin{align*}
+  E = E(\mathcal{W}, \mathbf{b}, \vec{x})
+  & = (\vec{y} - f(\vec{x}))^2 \\
+  & = (\vec{y} - \vec{a}^{(L)})^2 \\
+  & = (\vec{y} - \hat{\vec{y}})^2 \\
+  MSE & = \sum_{\vec{x} \in \mathcal{X}}\frac{E(\mathcal{W}, \mathbf{b}, \vec{x})}{N} \\
+      & = \frac{1}{N}\sum_{\vec{x} \in \mathcal{X}} (\vec{y} - \hat{\vec{y}})^2
+\end{align*}
+
+<p>
+Adding this to the Python class,
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 1: </span>Mean squared error</label><pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">error</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>, y, a<span style="color: #51afef;">)</span>:
+  <span style="color: #51afef;">return</span> np.<span style="color: #c678dd;">sum</span><span style="color: #51afef;">(</span>np.square<span style="color: #c678dd;">(</span>y - a<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org1cb4ff2" class="outline-2">
+<h2 id="org1cb4ff2"><span class="section-number-2">2</span> Minimising the Error</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Before our problem was to find a pair \((\mathcal{W}, \mathbf{b})\), that enables our network to perform well. We can now state this goal precisely: we need \((\mathcal{W}, \mathbf{b})\) such that \(MSE \approx 0\)<sup><a id="fnr.3" class="footref" href="#fn.3">3</a></sup>. We have boiled the problem down to minimising the function \(E\) through its parameters. Fortunately for us, this is no new problem in the world of mathematics.
+</p>
+</div>
+
+<div id="outline-container-org1f90833" class="outline-3">
+<h3 id="org1f90833"><span class="section-number-3">2.1</span> Negative Rate of Change</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+Imagine someone tells you to minimise some random function \(g(x)\) you know nothing about. The only thing you can ask is, for an \(x\) you pick, what is \(g(x)\)? Most people will start with some random \(x\) and nudge it in different directions to see which direction produces a smaller \(g(x)\) and hope that if they keep nudging \(x\) in that direction, \(g(x)\) will keep going down.
+</p>
+
+<p>
+Russell and Norvig explain a similar algorithm in their book <i>Artificial Intelligence&#x2013;A Modern Approach</i> with the statement, "trying to find the top of Mount Everest in a thick fog while suffering from amnesia" [<a href="#russel2010pearson">1</a>]. Except, in our case, we are trying to find the base-camp in a thick fog with amnesia, i. e., going down. We can't see too far, we don't remember where we came from but we have a sense of downwards direction. We just know that if we keep stepping (making nudges) in the downwards direction, we shall eventually reach a local minimum. This idea is the very key to finding the correct weights and biases. Calculus students know this rate of change as the derivative and most algebra students know it as the slope. We never get into algorithms to minimise the simple derivatives or slopes because we can just set them equal to zero and solve. But, in order to illustrate the algorithm, let's consider a simple polynomial as an example.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga6403f0" class="outline-3">
+<h3 id="orga6403f0"><span class="section-number-3">2.2</span> Descending the Derivative of a Parabola</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+Take this function \(g(x) = x^2\), we know that the derivative is \(2x\) and \(2x = 0 \iff x = 0\) hence \(x = 0 \Rightarrow g(x) = 0\). We can do this because \(g\) has such a nice and simple definition. What if it did not have this nice and simple definition like our network \(f\). We could do what we just talked about, start at some random \(x_0\) and make small \(\eta\) sized nudges to it using the negative derivative: \(x_{n+1} = x_n - \eta g'(x_n)\) as shown in figure <a href="#orgd333c2d">2</a>. The small nudge to the initial \(x_0\) gives us \(x_1\) and then we calculate \(-\eta g'(x_1)\) to figure out the nudge we want to make to \(x_1\) and the series continues till we find some \(x_i\) for which \(g(x_i)\) is small enough.
+</p>
+
+
+<figure id="orgd333c2d">
+<object type="image/svg+xml" data="./media/poly.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+
+<figcaption><span class="figure-number">Figure 2: </span>Derivative descent</figcaption>
+</figure>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org76d8c12" class="outline-2">
+<h2 id="org76d8c12"><span class="section-number-2">3</span> Gradient Descent</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+If our function is a polynomial of more than two variables: \(\vec{p} = [p_1,p_2,...,p_n]\) then to figure out the nudges we use gradients instead of the derivatives. The gradient of some function \(h(\vec{p})\) is denoted as a vector of partial derivatives using the symbol nabla: \(\nabla\).
+</p>
+
+<p>
+\[
+  \nabla h(\vec{p})
+  = \Bigg[\frac{\partial h(\vec{p})}{\partial p_1}, \frac{\partial h(\vec{p})}{\partial p_2}, \frac{\partial h(\vec{p})}{\partial p_3}, ... , \frac{\partial h(\vec{p})}{\partial p_n}\Bigg], \quad p_i \in \vec{p}
+  \]
+</p>
+
+
+<p>
+Depending upon how rusty your multi-variable calculus is, <a href="https://www.youtube.com/watch?v=tIpKfDc295M">this video by Grant Sanderson</a> may serve as a nice refresher. Negative gradients tell us the downwards direction vector and as per our algorithm, we make a small \(\eta\) sized nudge in this direction. Keep in mind that this "making a small \(\eta\) sized nudge", just means subtracting \(\eta \nabla h(\vec{p})\) from \(\vec{p}\). Similar to above, we then compute the gradient again at the new \(\vec{p}\) and so forth. We call a single nudge a <i>step</i>. Remember we passed the <code>__init__</code> definition in our <code>Network</code> class an <code>eta</code>? This \(\eta\) is what we meant by it, known by other names such as the <i>learning rate</i> or the <i>step size</i>.
+</p>
+</div>
+
+<div id="outline-container-orgf638ac8" class="outline-3">
+<h3 id="orgf638ac8"><span class="section-number-3">3.1</span> Descending the Gradient of a Paraboloid</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+For \(\vec{p} = [a, b]\), take \(g(\vec{p}) = g(a, b) = a^2 + b^2\), imagine this to be our error function where \(a\) is analogous to \(\mathcal{W}\) and \(b\) is analogous to \(\mathbf{b}\). Let's write the gradient descent algorithm,
+</p>
+
+<ol class="org-ol">
+<li>Pick a random \(\vec{p}_{0}\).</li>
+<li>Let \(\vec{p}_{i+1} = \vec{p}_{i} - \eta \nabla g(\vec{p}_i)\).</li>
+<li>Repeat step 2 for all \(i\).</li>
+</ol>
+
+<p>
+Can you implement the gradient descent for the function \(g\) in your favourite programming language? Here, I'll do it in Python, but first let's write the gradient of \(g\).
+</p>
+
+<p>
+\[
+  \nabla g(\vec{p}_i) = \Bigg[\frac{\partial g(\vec{p})}{\partial p_1}, \frac{\partial g(\vec{p})}{\partial p_2}\Bigg]
+  = \Bigg[\frac{\partial g(a,b)}{\partial a}, \frac{\partial g(a,b)}{\partial b}\Bigg]
+  = \Bigg[\frac{\partial (a^2 + b^2)}{\partial a}, \frac{\partial (a^2 + b^2)}{\partial b}\Bigg]
+  = [2a, 2b]
+  \]
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 2: </span>Gradient Descent for \(g(a,b)=a^2 + b^2, \nabla g(a,b) = [2a, 2b]\)</label><pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">g</span><span style="color: #51afef;">(</span>a, b, get_gr=<span style="color: #a9a1e1;">False</span><span style="color: #51afef;">)</span>:
+  <span style="color: #dcaeea;">val</span>, <span style="color: #dcaeea;">nabla_g</span> = a**2 + b**2, <span style="color: #51afef;">[</span>2 * a, 2 * b<span style="color: #51afef;">]</span>
+  <span style="color: #dcaeea;">error</span> = <span style="color: #51afef;">(</span>0 - a<span style="color: #51afef;">)</span>**2 + <span style="color: #51afef;">(</span>0 - b<span style="color: #51afef;">)</span>**2
+  <span style="color: #51afef;">return</span> nabla_g, error <span style="color: #51afef;">if</span> get_gr <span style="color: #51afef;">else</span> val
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">GD</span><span style="color: #51afef;">(</span>a=10.0, b=10.0, eta=0.3, print_steps=<span style="color: #a9a1e1;">True</span><span style="color: #51afef;">)</span>:  <span style="color: #5B6268;"># </span><span style="color: #5B6268;">Gradient Descent</span>
+  <span style="color: #dcaeea;">step</span>, <span style="color: #dcaeea;">step_error_sum</span> = 0, 0
+  <span style="color: #51afef;">for</span> step <span style="color: #51afef;">in</span> <span style="color: #c678dd;">range</span><span style="color: #51afef;">(</span>7<span style="color: #51afef;">)</span>:
+    <span style="color: #dcaeea;">gradient</span>, <span style="color: #dcaeea;">step_error</span> = g<span style="color: #51afef;">(</span>a, b, get_gr=<span style="color: #a9a1e1;">True</span><span style="color: #51afef;">)</span>
+    <span style="color: #dcaeea;">step_error_sum</span> += step_error
+    <span style="color: #dcaeea;">a</span> = a - <span style="color: #51afef;">(</span>eta * gradient<span style="color: #c678dd;">[</span>0<span style="color: #c678dd;">]</span><span style="color: #51afef;">)</span>
+    <span style="color: #dcaeea;">b</span> = b - <span style="color: #51afef;">(</span>eta * gradient<span style="color: #c678dd;">[</span>1<span style="color: #c678dd;">]</span><span style="color: #51afef;">)</span>
+    <span style="color: #51afef;">if</span> print_steps:
+      <span style="color: #dcaeea;">to_print</span> = <span style="color: #98be65;">'Step: {:&gt;2}, (a, b): ({:&gt;1.2}, {:&gt;1.2}) Error: {:&gt;3.5}'</span>
+      <span style="color: #51afef;">print</span><span style="color: #51afef;">(</span>to_print.<span style="color: #c678dd;">format</span><span style="color: #c678dd;">(</span>step, a, b, step_error<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+  <span style="color: #51afef;">return</span> step_error_sum / step
+
+GD<span style="color: #51afef;">()</span>
+</pre>
+</div>
+
+<p>
+We know that \(g(a, b) = 0\) for \((a,b)=(0,0)\). As we can see in the printed output (also in figure <a href="#org2e4484c">3</a>), at each gradient descent step, the parameters \((a, b)\) get closer to \((0,0)\) alongside the error approaching \(0\). This means that we converge towards \((a,b)\) that minimise \(g(a,b)\) while descending on the gradient.
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 3: </span>Output of Gradient Descent for \(g(a,b)=a^2 + b^2, \nabla g(a,b) = [2a, 2b]\)</label><pre class="src src-shell">Step:  0, <span style="color: #51afef;">(</span>a, b<span style="color: #51afef;">)</span>: <span style="color: #51afef;">(</span>4.0, 4.0<span style="color: #51afef;">)</span>     Error: 200.0
+Step:  1, <span style="color: #51afef;">(</span>a, b<span style="color: #51afef;">)</span>: <span style="color: #51afef;">(</span>1.6, 1.6<span style="color: #51afef;">)</span>     Error: 32.0
+Step:  2, <span style="color: #51afef;">(</span>a, b<span style="color: #51afef;">)</span>: <span style="color: #51afef;">(</span>0.64, 0.64<span style="color: #51afef;">)</span>   Error: 5.12
+Step:  3, <span style="color: #51afef;">(</span>a, b<span style="color: #51afef;">)</span>: <span style="color: #51afef;">(</span>0.26, 0.26<span style="color: #51afef;">)</span>   Error: 0.8192
+Step:  4, <span style="color: #51afef;">(</span>a, b<span style="color: #51afef;">)</span>: <span style="color: #51afef;">(</span>0.1, 0.1<span style="color: #51afef;">)</span>     Error: 0.13107
+Step:  5, <span style="color: #51afef;">(</span>a, b<span style="color: #51afef;">)</span>: <span style="color: #51afef;">(</span>0.041, 0.041<span style="color: #51afef;">)</span> Error: 0.020972
+Step:  6, <span style="color: #51afef;">(</span>a, b<span style="color: #51afef;">)</span>: <span style="color: #51afef;">(</span>0.016, 0.016<span style="color: #51afef;">)</span> Error: 0.0033554
+</pre>
+</div>
+
+
+<figure id="org2e4484c">
+<object type="image/svg+xml" data="./media/gradient.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+
+<figcaption><span class="figure-number">Figure 3: </span>Gradient Descent</figcaption>
+</figure>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgf99a256" class="outline-2">
+<h2 id="orgf99a256"><span class="section-number-2">4</span> Stochastic Gradient Descent</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+Instead of the simple gradient descent, we use the <i>Stochastic Gradient Descent</i> to find out the desired weights and biases. Stochastic gradient descent is just a small optimisation on the vanilla gradient descent. Let's first write down the gradient of the error function. Since \(E(\mathcal{W}, \mathbf{b}, \vec{x})\) is defined in terms of all weights \(W^{(l)} \in \mathcal{W}\) and biases \(\vec{b}^{(l)} \in \mathbf{b}\), its gradient vector will consist of the partial derivatives with respect to weights \(W^{(l)}\) and biases \(\vec{b}^{(l)}\).
+</p>
+
+<p>
+\[
+  \nabla E(\mathcal W, \mathbf b, \vec{x}) =
+  \Bigg[\frac{\partial E}{\partial W^{(L)}}, \frac{\partial E}{\partial \vec{b}^{(L)}}, \frac{\partial E}{\partial W^{(L-1)}}, \frac{\partial E}{\partial \vec{b}^{(L-1)}}, ... , \frac{\partial E}{\partial W^{(2)}}, \frac{\partial E}{\partial \vec{b}^{(2)}}\Bigg]
+  \]
+</p>
+
+<p>
+The vanilla gradient descent to find the weights and biases is:
+</p>
+
+<ol class="org-ol">
+<li>Pick \(\vec{x}_{0} \in \mathcal{X} = \{\vec{x}_{1}, \vec{x}_{2}, \vec{x}_{3}, ..., \vec{x}_{n}\}\).</li>
+<li>Let \((\mathcal{W}, \mathbf{b})_{i+1} = (\mathcal{W}, \mathbf{b})_{i} \circleddash \eta \nabla E(\mathcal W_i, \mathbf b_i, \vec{x}_i)\)<sup><a id="fnr.4" class="footref" href="#fn.4">4</a></sup>.</li>
+<li>Repeat step 2 for all \(i\).</li>
+</ol>
+
+<p>
+For the stochastic gradient descent, we first shuffle \(\mathcal{X}\) and then split it down into smaller subsets we call <i>mini-batches</i>. We'll denote a single mini-batch as \(\mathcal{B}_i \subset \mathcal{X}\). We passed the size of a single mini-batch to our <code>Network</code> class with the variable <code>bt_size</code>. Let's include a generator function in the Python class which will shuffle <code>X</code> and then yield \(\mathcal{B}_i\)'s till it runs out.
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 4: </span>Mini-batch \(\mathcal{B}_i\) dispenser of size <code>bt_size</code></label><pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">batches</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span><span style="color: #51afef;">)</span>:
+  <span style="color: #dcaeea;">shuffle_ind</span> = np.arange<span style="color: #51afef;">(</span><span style="color: #c678dd;">len</span><span style="color: #c678dd;">(</span><span style="color: #51afef;">self</span>.X<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+  np.random.shuffle<span style="color: #51afef;">(</span>shuffle_ind<span style="color: #51afef;">)</span>
+  <span style="color: #dcaeea;">shuffle_X</span>, <span style="color: #dcaeea;">shuffle_y</span> = <span style="color: #51afef;">self</span>.X<span style="color: #51afef;">[</span>shuffle_ind<span style="color: #51afef;">]</span>, <span style="color: #51afef;">self</span>.y<span style="color: #51afef;">[</span>shuffle_ind<span style="color: #51afef;">]</span>
+  <span style="color: #dcaeea;">i</span>, <span style="color: #dcaeea;">num_batches</span> = 0, <span style="color: #c678dd;">int</span><span style="color: #51afef;">(</span><span style="color: #c678dd;">len</span><span style="color: #c678dd;">(</span>shuffle_X<span style="color: #c678dd;">)</span> / <span style="color: #51afef;">self</span>.bt_size<span style="color: #51afef;">)</span>
+  <span style="color: #51afef;">for</span> i <span style="color: #51afef;">in</span> <span style="color: #c678dd;">range</span><span style="color: #51afef;">(</span>num_batches - 1<span style="color: #51afef;">)</span>:
+    <span style="color: #dcaeea;">l</span>, <span style="color: #dcaeea;">u</span> = i * <span style="color: #51afef;">self</span>.bt_size, <span style="color: #51afef;">(</span>i + 1<span style="color: #51afef;">)</span> * <span style="color: #51afef;">self</span>.bt_size
+    <span style="color: #dcaeea;">mini_batch_X</span> = shuffle_X<span style="color: #51afef;">[</span>l:u<span style="color: #51afef;">]</span>
+    <span style="color: #dcaeea;">mini_batch_y</span> = shuffle_y<span style="color: #51afef;">[</span>l:u<span style="color: #51afef;">]</span>
+    <span style="color: #51afef;">yield</span> <span style="color: #c678dd;">zip</span><span style="color: #51afef;">(</span>mini_batch_X, mini_batch_y<span style="color: #51afef;">)</span>
+  <span style="color: #dcaeea;">mini_batch_X</span> = shuffle_X<span style="color: #51afef;">[</span><span style="color: #c678dd;">(</span>i + 1<span style="color: #c678dd;">)</span> * <span style="color: #51afef;">self</span>.bt_size:<span style="color: #51afef;">]</span>
+  <span style="color: #dcaeea;">mini_batch_y</span> = shuffle_y<span style="color: #51afef;">[</span><span style="color: #c678dd;">(</span>i + 1<span style="color: #c678dd;">)</span> * <span style="color: #51afef;">self</span>.bt_size:<span style="color: #51afef;">]</span>
+  <span style="color: #51afef;">yield</span> <span style="color: #c678dd;">zip</span><span style="color: #51afef;">(</span>mini_batch_X, mini_batch_y<span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Each stochastic gradient descent step corresponds to a mini-batch. For all \(\vec{x} \in \mathcal{B_i}\), we compute \(\nabla E(\mathcal{W}, \mathbf{b}, \vec{x})\), sum them, and calculate their mean. Now we use this average gradient from \(\mathcal{B_i}\) to make our nudges. We write the stochastic gradient descent algorithm:
+</p>
+
+<ol class="org-ol">
+<li>Start with \(\mathcal{B}_0\).</li>
+<li>Compute \((\mathcal{W}, \mathbf{b})_{i+1}\),
+\[
+     (\mathcal{W}, \mathbf{b})_{i+1} = (\mathcal{W}, \mathbf{b})_{i} \circleddash \eta \Bigg(\frac{1}{|\mathcal{B}_i|} \sum_{\vec{x} \in \mathcal{B}_i} \nabla E(\mathcal W_i, \mathbf b_i, \vec{x}) \Bigg)
+     \]</li>
+<li>Repeat step 2 for all \(i\).</li>
+</ol>
+
+<p>
+The step two above looks a bit intimidating. But, the code that implements it looks a lot better. Let's implement the stochastic gradient descent.
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 5: </span>Stochastic Gradient Descent</label><pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">SGD</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>, print_steps<span style="color: #51afef;">)</span>:  <span style="color: #5B6268;"># </span><span style="color: #5B6268;">Stochastic Gradient Descent</span>
+  <span style="color: #dcaeea;">step</span>, <span style="color: #dcaeea;">step_error_sum</span> = 0, 0
+  <span style="color: #51afef;">for</span> mini_batch <span style="color: #51afef;">in</span> <span style="color: #51afef;">self</span>.batches<span style="color: #51afef;">()</span>:
+    <span style="color: #dcaeea;">gradient</span>, <span style="color: #dcaeea;">step_error</span> = <span style="color: #51afef;">self</span>.average_gradient<span style="color: #51afef;">(</span>mini_batch<span style="color: #51afef;">)</span>
+    <span style="color: #dcaeea;">step_error_sum</span> += step_error
+    <span style="color: #51afef;">self</span>.Wb = <span style="color: #51afef;">self</span>.Wb - <span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>.eta * gradient<span style="color: #51afef;">)</span>
+    <span style="color: #51afef;">self</span>.W, <span style="color: #51afef;">self</span>.b = <span style="color: #51afef;">self</span>.Wb
+    <span style="color: #51afef;">if</span> print_steps:
+      <span style="color: #dcaeea;">to_print</span> = <span style="color: #98be65;">'SGD step: {:&gt;7}, Error: {:&gt;3.5}'</span>
+      <span style="color: #51afef;">print</span><span style="color: #51afef;">(</span>to_print.<span style="color: #c678dd;">format</span><span style="color: #c678dd;">(</span>step, step_error<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+    <span style="color: #dcaeea;">step</span> += 1
+  <span style="color: #51afef;">return</span> step_error_sum / step
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">average_gradient</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>, mini_batch<span style="color: #51afef;">)</span>:
+  <span style="color: #dcaeea;">g_sum</span>, <span style="color: #dcaeea;">error_sum</span> = <span style="color: #51afef;">self</span>.backpropagation<span style="color: #51afef;">(</span>*<span style="color: #c678dd;">next</span><span style="color: #c678dd;">(</span>mini_batch<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+  <span style="color: #51afef;">for</span> x, y <span style="color: #51afef;">in</span> mini_batch:
+    <span style="color: #dcaeea;">batch_gradient</span>, <span style="color: #dcaeea;">error</span> = <span style="color: #51afef;">self</span>.backpropagation<span style="color: #51afef;">(</span>x, y<span style="color: #51afef;">)</span>
+    <span style="color: #dcaeea;">error_sum</span> += error
+    <span style="color: #dcaeea;">g_sum</span> += batch_gradient
+  <span style="color: #51afef;">return</span> g_sum / <span style="color: #51afef;">self</span>.bt_size, error_sum / <span style="color: #51afef;">self</span>.bt_size
+</pre>
+</div>
+
+<p>
+Observe how the definition of the function <code>SGD(...)</code> is not much different than the vanilla implementation of <code>GD(...)</code> from before? In-fact, we only changed a few lines. What is this <code>self.backpropagation(x, y)</code>?
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge2e959b" class="outline-2">
+<h2 id="orge2e959b"><span class="section-number-2">5</span> Propagate Backwards</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+We have arrived at the belly of the beast. Gradient descent depends on our ability to calculate the gradient of the error function \(E\)<sup><a id="fnr.5" class="footref" href="#fn.5">5</a></sup>. Consequently, we can only calculate the gradient if we can calculate the partial derivatives of \(E\) with respect to some \(W^{(l)} \in \mathcal{W}\) and \(\vec{b}^{(l)} \in \mathbf{b}\). Let's remind ourselves of the \(\nabla E\).
+</p>
+
+<p>
+\[
+  \nabla E(\mathcal W, \mathbf b, \vec{x}) =
+  \Bigg[\frac{\partial E}{\partial W^{(L)}}, \frac{\partial E}{\partial \vec{b}^{(L)}}, \frac{\partial E}{\partial W^{(L-1)}}, \frac{\partial E}{\partial \vec{b}^{(L-1)}}, ... , \frac{\partial E}{\partial W^{(2)}}, \frac{\partial E}{\partial \vec{b}^{(2)}}\Bigg]
+  \]
+</p>
+
+<p>
+Backpropagation is the algorithm we use to calculate the above gradient. We'll demonstrate it with a small example. Let's architect a network to classify a ten bit binary number as even (True) or odd (False). Note that some of the choices in this architecture will be made not for the sake of solving the problem optimally but for the illustration of the appropriate concepts. For a total of \(L = 3\) layers, put ten neurons in the input layer to hold the activation caused by the ten bits. There are three neurons in the hidden layer. Finally, two neurons in the output layer to output the probability of an input \(\vec{x}\) (which is a binary number) being even or odd, i. e., \(\vec{a}^{(3)} = [0, 1]\) for even and \(\vec{a}^{(3)} = [1, 0]\) for odd.
+</p>
+
+
+<figure id="org4233352">
+<object type="image/svg+xml" data="./media/mlp-bin.svg" class="org-svg" width="60%">
+Sorry, your browser does not support SVG.</object>
+
+<figcaption><span class="figure-number">Figure 4: </span>Multi-layer Perceptron to classify ten bit binary numbers per parity</figcaption>
+</figure>
+
+<p>
+For the network in figure <a href="#org4233352">4</a>, we have the following weights, biases and activations:
+</p>
+
+\begin{align*}
+  (\mathcal{W}, \mathbf{b}) & = (\{W^{(2)}_{3,10},W^{(3)}_{2,3}\}, \{\vec{b}^{(2)}, \vec{b}^{(3)}\}) \\
+  \vec{a}^{(1)} & = \vec{x} \\
+  \vec{z}^{(2)} & = W^{(2)}\vec{a}^{(1)} + \vec{b}^{(2)} \\
+               & = W^{(2)}\vec{x} + \vec{b}^{(2)}
+                && \text{and} \quad \vec{a}^{(2)} = \sigma(\vec{z}^{(2)}) \\
+  \vec{z}^{(3)} & = W^{(3)}\vec{a}^{(2)} + \vec{b}^{(3)} \\
+               & = W^{(3)}\sigma(W^{(2)}\vec{x} + \vec{b}^{(2)}) + \vec{b}^{(3)}
+                && \text{and} \quad \vec{a}^{(3)} = \sigma(\vec{z}^{(3)}) \\
+\end{align*}
+
+<p>
+We can also write out the gradient \(\nabla E\),
+</p>
+
+\begin{align*}
+  \nabla E(\mathcal W, \mathbf b, \vec{x})
+  & =
+  \Bigg[\frac{\partial E}{\partial W^{(L)}}, \frac{\partial E}{\partial \vec{b}^{(L)}}, \frac{\partial E}{\partial W^{(L-1)}}, \frac{\partial E}{\partial \vec{b}^{(L-1)}}\Bigg] \\
+  & =
+  \Bigg[\frac{\partial E}{\partial W^{(3)}}, \frac{\partial E}{\partial \vec{b}^{(3)}}, \frac{\partial E}{\partial W^{(2)}}, \frac{\partial E}{\partial \vec{b}^{(2)}}\Bigg] \\
+\end{align*}
+</div>
+
+<div id="outline-container-org35030f8" class="outline-3">
+<h3 id="org35030f8"><span class="section-number-3">5.1</span> Chain Rule and Composite Functions</h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+Let's start with the \(\frac{\partial E}{\partial W^{(L)}}\).
+</p>
+
+\begin{align*}
+  \frac{\partial E}{\partial W^{(L)}}
+  & = \frac{\partial (\vec{y} - \hat{\vec{y}})^2}{\partial W^{(L)}} \\
+  & = \frac{\partial (\vec{y} - \vec{a}^{(L)})^2}{\partial W^{(L)}} \\
+\end{align*}
+
+<p>
+We have a composite function: \((\vec{y} - \vec{a}^{(L)})^2\). We'll need the <a href="https://en.wikipedia.org/wiki/Chain_rule">chain rule</a> to move on. The application of chain rule here needs a little care. You maybe already able to take polynomial derivatives with the chain rule without thinking much of it. But, in order to truly understand its application here, the reader should not only be able to apply the chain rule to the polynomials but be aware of the steps they are taking in terms of its notation. Here is a nice <a href="https://math.stackexchange.com/a/3696249/783364">example</a> that walks us throw the chain rule in <a href="https://en.wikipedia.org/wiki/Leibniz%27s_notation">Leibniz's notation</a><sup><a id="fnr.6" class="footref" href="#fn.6">6</a></sup> which is what we'll be using. We state the chain rule.
+</p>
+
+<p>
+\[
+   \frac{\operatorname{d} f \circ g (x)}{\operatorname{d} x}
+   = \frac{\operatorname{d} f(g(x))}{\operatorname{d} x}
+   = \frac{\operatorname{d} f(g(x))}{\operatorname{d} g(x)} \times \frac{\operatorname{d} g(x)}{\operatorname{d} x}
+   = \frac{\operatorname{d} f}{\operatorname{d} g} \times \frac{\operatorname{d} g}{\operatorname{d} x}
+   \]
+</p>
+
+<p>
+Following is an intuitive way to think about it [<a href="#3354744">3</a>].
+</p>
+
+<p>
+\[\begin{array}{c}
+   \text{The change in }f\circ g\text{ caused by}\\
+   \text{a small unit change in }x
+   \end{array}=\begin{array}{c}
+   \text{The change in }f\text{ caused by}\\
+   \text{a small unit change in }g
+   \end{array}\times\begin{array}{c}
+   \text{The change in }g\text{ caused by}\\
+   \text{a small unit change in }x.
+   \end{array}\]
+</p>
+
+<p>
+Therefore,
+</p>
+
+\begin{align*}
+  \frac{\partial E}{\partial W^{(L)}}
+  & = \frac{\partial (\vec{y} - \vec{a}^{(L)})^2}{\partial W^{(L)}} \\
+  & = \frac{\partial (\vec{y} - \vec{a}^{(L)})^2}{\partial (\vec{y} - \vec{a}^{(L)})}
+    \frac{\partial (\vec{y} - \vec{a}^{(L)})}{\partial W^{(L)}}
+  && \text{Chain Rule} \\
+  & = 2(\vec{y} - \vec{a}^{(L)}) \Bigg(
+    \frac{\partial \vec{y}}{\partial W^{(L)}}
+    - \frac{\partial \vec{a}^{(L)}}{\partial W^{(L)}}
+    \Bigg)
+  && \text{Since } \frac{\partial (\vec{y} - \vec{a}^{(L)})^2}{\partial (\vec{y} - \vec{a}^{(L)})} = 2(\vec{y} - \vec{a}^{(L)})\\
+  & = 2(\vec{y} - \vec{a}^{(L)}) \Bigg(0 - \frac{\partial (\vec{a}^{(L)})}{\partial W^{(L)}}
+    \Bigg)
+  && \text{Since } \frac{\partial (\vec{y})}{\partial W^{(L)}} = 0 \\
+  & = 2(\vec{y} - \vec{a}^{(L)}) \Bigg(- \frac{\partial \vec{a}^{(L)}}{\partial W^{(L)}}
+    \Bigg) \\
+  & = -2(\vec{y} - \vec{a}^{(L)}) \frac{\partial \vec{a}^{(L)}}{\partial W^{(L)}} \\
+  & = -2(\vec{y} - \vec{a}^{(L)}) \frac{\partial \sigma(\vec{z}^{(L)})}{\partial W^{(L)}} \\
+  & = -2(\vec{y} - \vec{a}^{(L)}) \frac{\partial \sigma(\vec{z}^{(L)})}{\partial \vec{z}^{(L)}}
+    \frac{\partial \vec{z}^{(L)}}{\partial W^{(L)}}
+  && \text{Chain Rule} \\
+  & = -2(\vec{y} - \vec{a}^{(L)}) \sigma'(\vec{z}^{(L)}) \frac{\partial (W^{L}\vec{a}^{(L-1)}+\vec{b}^{(L)})}{\partial W^{(L)}}
+  && \text{Since } \frac{\partial \sigma(\vec{z}^{(L)})}{\partial \vec{z}^{(L)}} = \sigma'(\vec{z}^{(L)}) \\
+  & = -2(\vec{y} - \vec{a}^{(L)}) \sigma'(\vec{z}^{(L)}) \frac{\partial (W^{L}\vec{a}^{(L-1)})}{\partial W^{(L)}} + \frac{\partial (\vec{b}^{(L)})}{\partial W^{(L)}} \\
+  & = -2(\vec{y} - \vec{a}^{(L)}) \sigma'(\vec{z}^{(L)}) \frac{\partial (W^{L}\vec{a}^{(L-1)})}{\partial W^{(L)}}
+  && \text{Since } \frac{\partial (\vec{b}^{(L)})}{\partial W^{(L)}} = 0 \\
+  & = -2(\vec{y} - \vec{a}^{(L)}) \sigma'(\vec{z}^{(L)}) \vec{a}^{(L-1)}
+  && \text{Since } \frac{\partial (W^{L}\vec{a}^{(L-1)})}{\partial W^{(L)}} = \vec{a}^{(L-1)}
+\end{align*}
+
+<p>
+Similarly for \(\frac{\partial E}{\partial \vec{b}^{(L)}}\), the same derivation will apply except at the end we'll have,
+</p>
+
+<p>
+\[
+   \frac{\partial (\vec{b}^{(L)})}{\partial \vec{b}^{(L)}} = 1
+   \Rightarrow
+   \frac{\partial E}{\partial \vec{b}^{(L)}} =
+   -\frac{\partial (\vec{y} - \vec{a}^{(L)})^2}{\partial (\vec{y}-\vec{a}^{(L)})} \frac{\partial (\sigma(\vec{z}^{(L)}))}{\partial \vec{z}^{(L)}} \frac{\partial \vec{z}^{(L)}}{\partial \vec{b}^{(L)}}
+   = -2(\vec{y}-\vec{a}^{(L)})\sigma'(\vec{z}^{(L)})(1)
+  \]
+</p>
+
+
+<p>
+You'll often see the term \(-2(\vec{y} - \vec{a}^{(L)}) \sigma'(\vec{z}^{(L)})\) written as \(\delta^{(L)}\). This is known as the <a href="https://en.wikipedia.org/wiki/Delta_rule">delta rule</a> or error in the layer \(l\). We have the three grand equations (each arranged correctly per dimension) as a result<sup><a id="fnr.7" class="footref" href="#fn.7">7</a></sup>:
+</p>
+
+\begin{align}
+  \frac{\partial E}{\partial W^{(L)}}
+  & = \vec{a}^{(L-1)}\delta^{(L)} \\
+  \delta^{(L)}
+  & = -2(\vec{y} - \vec{a}^{(L)}) \odot \sigma'(\vec{z}^{(L)}) \\
+  \frac{\partial E}{\partial \vec{b}^{(L)}}
+  & = \delta^{(L)}
+\end{align}
+
+<p>
+But what about all the rest of the partial derivatives for layers \(l < L\)? Well, we just keep applying the chain rule in the above derivation instead of stopping at \(\partial (W^{L}\vec{a}^{(L-1)})\). Let's do it for \(l = L-1, \frac{\partial E}{\partial W^{(L-1)}}\).
+</p>
+
+\begin{align*}
+  \frac{\partial E}{\partial W^{(L-1)}}
+  & = \delta^{(L)}\frac{\partial (W^{L}\vec{a}^{(L-1)})}{\partial W^{(L-1)}} \\
+  & = \delta^{(L)}\frac{\partial (W^{L}\vec{a}^{(L-1)})}{\partial a^{(L-1)}}
+    \frac{\partial \vec{a}^{(L-1)}}{\partial W^{(L-1)}}
+  && \text{Chain Rule}\\
+  & = \delta^{(L)}\frac{\partial (W^{L}\vec{a}^{(L-1)})}{\partial a^{(L-1)}}
+    \frac{\partial \sigma(\vec{z}^{(L-1)})}{\partial W^{(L-1)}} \\
+  & = \delta^{(L)}\frac{\partial (W^{L}\vec{a}^{(L-1)})}{\partial a^{(L-1)}}
+    \frac{\partial \sigma(\vec{z}^{(L-1)})}{\partial \vec{z}^{(L-1)}}
+    \frac{\partial \vec{z}^{(L-1)}}{\partial W^{(L-1)}}
+  && \text{Chain Rule}\\
+  & = \delta^{(L)}\frac{\partial (W^{L}\vec{a}^{(L-1)})}{\partial a^{(L-1)}}
+    \frac{\partial \sigma(\vec{z}^{(L-1)})}{\partial \vec{z}^{(L-1)}}
+    \frac{\partial (W^{(L-1)}\vec{a}^{(L-2)} + \vec{b}^{(L-1)})}{\partial W^{(L-1)}} \\
+  & = \delta^{(L)}W^{L} \sigma'(\vec{z}^{(L-1)}) \vec{a}^{(L-2)} \\
+  & = \delta^{(L-1)} \vec{a}^{(L-2)}
+  && \text{Letting } \delta^{(L-1)} = \delta^{(L)}W^{L} \sigma'(\vec{z}^{(L-1)})\\
+\end{align*}
+
+<p>
+We now generalise (correcting dimensions) through induction, for all \(l = L - i\),
+</p>
+
+ \begin{align}
+ \frac{\partial E}{\partial W^{(l)}} & = \vec{a}^{(l-1)}\delta^{(l)}
+ && \text{Same as }\frac{\partial E}{\partial W^{(L-i)}} = \vec{a}^{(L-i-1)}\delta^{(L-i)} \\
+ \delta^{(l)} & = \Big(\big(W^{(l+1)}\big)^T \delta^{(l+1)}\Big) \odot \sigma'(\vec{z}^{(l)})
+ && \text{Same as }\delta^{(L-i)} = \Big(\big(W^{(L-i+1)}\big)^T \delta^{(L-i+1)}\Big) \odot \sigma'(\vec{z}^{(L-i)}) \\
+\frac{\partial E}{\partial \vec{b}^{(l)}} & = \delta^{(l)}                   
+ && \text{Same as }\frac{\partial E}{\partial \vec{b}^{(L-i)}} = \delta^{(L-i)} \\
+ \end{align}
+</div>
+</div>
+
+<div id="outline-container-org5f06859" class="outline-3">
+<h3 id="org5f06859"><span class="section-number-3">5.2</span> Backpropagation</h3>
+<div class="outline-text-3" id="text-5-2">
+<p>
+The only thing keeping us from running the implementation of the stochastic gradient decent was the lack of a way to calculate the gradient of the error function \(E\). That is no longer true! We have a plan of attack. We do a forward pass using some \(\vec{x} \in \mathcal{B}_i\) and then we use equations (1), (2) and (3) to calculate the layer \(L\) partial derivative in the gradient. From there we use the \(\delta^{(L)}\) to recursively keep calculating \(\delta^{(l)}\) to be used in equations (4), (5) and (6) in order to calculate the rest of the partial derivatives backwards. This <i>backwards pass</i> is why we call this algorithm <i>Backpropagation</i>. Let's implement backpropagation for \(\vec{x} \in \mathcal{B}_i\).
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 6: </span>Backpropagation</label><pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">backpropagation</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>, x, y<span style="color: #51afef;">)</span>:
+  <span style="color: #dcaeea;">outputs</span>, <span style="color: #dcaeea;">activations</span> = <span style="color: #51afef;">self</span>.forward_pass<span style="color: #51afef;">(</span>x<span style="color: #51afef;">)</span>
+  <span style="color: #dcaeea;">gradient</span> = <span style="color: #51afef;">self</span>.backward_pass<span style="color: #51afef;">(</span>outputs, activations, y<span style="color: #51afef;">)</span>
+  <span style="color: #51afef;">return</span> gradient, <span style="color: #51afef;">self</span>.error<span style="color: #51afef;">(</span>y, activations<span style="color: #c678dd;">[</span>-1<span style="color: #c678dd;">]</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">backward_pass</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>, outputs, activations, y<span style="color: #51afef;">)</span>:
+  <span style="color: #dcaeea;">gradient_W</span> = np.empty<span style="color: #51afef;">(</span>shape=<span style="color: #51afef;">self</span>.L - 1, dtype=np.<span style="color: #c678dd;">object</span><span style="color: #51afef;">)</span>
+  <span style="color: #dcaeea;">gradient_b</span> = np.empty<span style="color: #51afef;">(</span>shape=<span style="color: #51afef;">self</span>.L - 1, dtype=np.<span style="color: #c678dd;">object</span><span style="color: #51afef;">)</span>
+  <span style="color: #dcaeea;">z</span>, <span style="color: #dcaeea;">a</span> = outputs<span style="color: #51afef;">[</span>-1<span style="color: #51afef;">]</span>, activations<span style="color: #51afef;">[</span>-1<span style="color: #51afef;">]</span>  <span style="color: #5B6268;"># </span><span style="color: #5B6268;">z^L, a^L</span>
+  <span style="color: #dcaeea;">delta</span> = -2 * <span style="color: #51afef;">(</span>y - a<span style="color: #51afef;">)</span> * <span style="color: #51afef;">self</span>.sigmoid<span style="color: #51afef;">(</span>z, derivative=<span style="color: #a9a1e1;">True</span><span style="color: #51afef;">)</span>  <span style="color: #5B6268;"># </span><span style="color: #5B6268;">delta^L eq 2</span>
+  <span style="color: #dcaeea;">delta</span> = delta.reshape<span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>1, <span style="color: #c678dd;">len</span><span style="color: #98be65;">(</span>delta<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+  <span style="color: #51afef;">for</span> l <span style="color: #51afef;">in</span> <span style="color: #c678dd;">range</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>.L - 1, 0, -1<span style="color: #51afef;">)</span>:
+    <span style="color: #dcaeea;">a_prev</span> = activations<span style="color: #51afef;">[</span>l - 1<span style="color: #51afef;">]</span>
+    <span style="color: #dcaeea;">a_prev</span> = a_prev.reshape<span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span><span style="color: #c678dd;">len</span><span style="color: #98be65;">(</span>a_prev<span style="color: #98be65;">)</span>, 1<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>.T
+    <span style="color: #dcaeea;">pC_w</span> = np.dot<span style="color: #51afef;">(</span>delta.T, a_prev<span style="color: #51afef;">)</span>  <span style="color: #5B6268;"># </span><span style="color: #5B6268;">eq 1 or 4</span>
+    <span style="color: #dcaeea;">pC_b</span> = delta.flatten<span style="color: #51afef;">()</span>  <span style="color: #5B6268;"># </span><span style="color: #5B6268;">eq 3 or 6</span>
+    gradient_W<span style="color: #51afef;">[</span>l - 1<span style="color: #51afef;">]</span>, <span style="color: #dcaeea;">gradient_b</span><span style="color: #51afef;">[</span>l - 1<span style="color: #51afef;">]</span> = pC_w, pC_b
+    <span style="color: #51afef;">if</span> l == 1:
+      <span style="color: #51afef;">break</span>
+    <span style="color: #dcaeea;">z</span>, <span style="color: #dcaeea;">a</span> = outputs<span style="color: #51afef;">[</span>l - 2<span style="color: #51afef;">]</span>, activations<span style="color: #51afef;">[</span>l - 1<span style="color: #51afef;">]</span>
+    <span style="color: #dcaeea;">delta</span> = np.dot<span style="color: #51afef;">(</span>delta, <span style="color: #51afef;">self</span>.W<span style="color: #c678dd;">[</span>l - 1<span style="color: #c678dd;">]</span><span style="color: #51afef;">)</span> * <span style="color: #51afef;">self</span>.sigmoid<span style="color: #51afef;">(</span>z, derivative=<span style="color: #a9a1e1;">True</span><span style="color: #51afef;">)</span>  <span style="color: #5B6268;"># </span><span style="color: #5B6268;">eq 5</span>
+  <span style="color: #dcaeea;">gradient</span> = np.empty<span style="color: #51afef;">(</span>shape=2, dtype=np.<span style="color: #c678dd;">object</span><span style="color: #51afef;">)</span>
+  gradient<span style="color: #51afef;">[</span>0<span style="color: #51afef;">]</span>, <span style="color: #dcaeea;">gradient</span><span style="color: #51afef;">[</span>1<span style="color: #51afef;">]</span> = gradient_W, gradient_b
+  <span style="color: #51afef;">return</span> gradient
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgcf12f97" class="outline-2">
+<h2 id="orgcf12f97"><span class="section-number-2">6</span> Wrapping Up the Python Class</h2>
+<div class="outline-text-2" id="text-6">
+<p>
+We are done with the mathematics of the Multi-layer Perceptron. However, we still need to add a few functions to our Python class. In order to train the network, we run multiple round of the stochastic gradient decent using differently permuted <code>X, y</code> each time to produce the batches. The <code>Network</code> class figures out the number of <code>self.SGD(...)</code> calls by the variable <code>epochs</code> passed to the <code>__init__</code> definition. This function is usually named something along the lines of <code>train(...)</code>, but we'll make our network <a href="https://soundcloud.com/rana-m-sholkamy/el-choclo">tango</a> instead.
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 7: </span>Training function</label><pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">tango</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>, print_steps=<span style="color: #a9a1e1;">False</span><span style="color: #51afef;">)</span>:  <span style="color: #5B6268;"># </span><span style="color: #5B6268;">train</span>
+  <span style="color: #51afef;">for</span> epoch <span style="color: #51afef;">in</span> <span style="color: #c678dd;">range</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>.epochs<span style="color: #51afef;">)</span>:
+    <span style="color: #dcaeea;">error</span> = <span style="color: #51afef;">self</span>.SGD<span style="color: #51afef;">(</span>print_steps<span style="color: #51afef;">)</span>
+    <span style="color: #51afef;">print</span><span style="color: #51afef;">(</span><span style="color: #98be65;">'* Epoch: {:&gt;4}, Error: {:&gt;3.5}'</span>.<span style="color: #c678dd;">format</span><span style="color: #c678dd;">(</span>epoch, error<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Let's also add a function that will forward feed some input \(\vec{x}\) and return the index of the greatest activation in the output layer \(\vec{a}^{(L)}\).
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 8: </span>Arg max of the output layer \(\vec{a}^{(L)}\)</label><pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">predict</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>, input_layer<span style="color: #51afef;">)</span>:
+  <span style="color: #dcaeea;">output_layer</span> = <span style="color: #51afef;">self</span>.forward_pass<span style="color: #51afef;">(</span>input_layer, <span style="color: #a9a1e1;">False</span><span style="color: #51afef;">)</span>
+  <span style="color: #51afef;">return</span> output_layer.argmax<span style="color: #51afef;">()</span>
+</pre>
+</div>
+
+<p>
+Finally, say we trained the network for a while and have a pretty good pair of \((\mathcal{W}, \mathbf{b})\). We should have a way to save and load such weights and biases.
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 9: </span>Save and loaf \((\mathcal{W}, \mathbf{b})\) from disk.</label><pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">save_weights_biases</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>, path=<span style="color: #98be65;">'./weights_biases.npy'</span><span style="color: #51afef;">)</span>:
+  <span style="color: #51afef;">return</span> np.save<span style="color: #51afef;">(</span>path, <span style="color: #51afef;">self</span>.Wb<span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">load_weights_biases</span><span style="color: #51afef;">(</span><span style="color: #51afef;">self</span>, path=<span style="color: #98be65;">'./weights_biases.npy'</span><span style="color: #51afef;">)</span>:
+  <span style="color: #51afef;">self</span>.Wb = np.load<span style="color: #51afef;">(</span>path, allow_pickle=<span style="color: #a9a1e1;">True</span><span style="color: #51afef;">)</span>
+  <span style="color: #51afef;">self</span>.W, <span style="color: #51afef;">self</span>.b = <span style="color: #51afef;">self</span>.Wb
+  <span style="color: #51afef;">return</span> <span style="color: #a9a1e1;">True</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5a60bce" class="outline-2">
+<h2 id="org5a60bce"><span class="section-number-2">7</span> Testing Code and Assumptions</h2>
+<div class="outline-text-2" id="text-7">
+<p>
+You can find the complete <code>Network</code> class we wrote in the file: <code>network.py</code> at <a href="https://github.com/simurgh9/net">Github</a> or <a href="../src/network.py">here</a>.
+</p>
+</div>
+
+<div id="outline-container-orgacf964c" class="outline-3">
+<h3 id="orgacf964c"><span class="section-number-3">7.1</span> Classifying Binary Numbers per Parity</h3>
+<div class="outline-text-3" id="text-7-1">
+<p>
+Let's first test <code>network.py</code> by <a href="../src/parity.py">building and training</a> the network in figure <a href="#org4233352">4</a>. We produce the <a href="https://en.wikipedia.org/wiki/Training,_validation,_and_test_sets">training and testing examples</a> (skipping validation). The training examples are what we pass as <code>X, y</code>. The testing examples are the ones we use to test the accuracy of a trained network. We don't train the network on this set for the sake of an unbiased measure of performance.
+</p>
+
+<p>
+\[
+  \text{Accuracy} = ACC = \frac{\text{Number of Correctly Classified Examples in Test Set}}{\text{Number of Incorrectly Classified Examples in Test Set}}
+  \]
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 10: </span>Producing testing and training data sets</label><pre class="src src-python"><span style="color: #51afef;">from</span> network <span style="color: #51afef;">import</span> Network
+<span style="color: #51afef;">import</span> numpy <span style="color: #51afef;">as</span> np
+
+<span style="color: #dcaeea;">N</span>, <span style="color: #dcaeea;">n</span> = 700, 10
+<span style="color: #dcaeea;">X</span> = np.array<span style="color: #51afef;">(</span><span style="color: #c678dd;">[</span><span style="color: #c678dd;">list</span><span style="color: #98be65;">(</span><span style="color: #c678dd;">map</span><span style="color: #da8548;">(</span><span style="color: #c678dd;">int</span>, <span style="color: #98be65;">'{0:010b}'</span>.<span style="color: #c678dd;">format</span><span style="color: #a9a1e1;">(</span>e<span style="color: #a9a1e1;">)</span><span style="color: #da8548;">)</span><span style="color: #98be65;">)</span> <span style="color: #51afef;">for</span> e <span style="color: #51afef;">in</span> <span style="color: #c678dd;">range</span><span style="color: #98be65;">(</span>2**n<span style="color: #98be65;">)</span><span style="color: #c678dd;">]</span><span style="color: #51afef;">)</span>
+<span style="color: #dcaeea;">y</span> = np.array<span style="color: #51afef;">(</span><span style="color: #c678dd;">[</span><span style="color: #c678dd;">int</span><span style="color: #98be65;">(</span>e % 2 == 0<span style="color: #98be65;">)</span> <span style="color: #51afef;">for</span> e <span style="color: #51afef;">in</span> <span style="color: #c678dd;">range</span><span style="color: #98be65;">(</span>2**n<span style="color: #98be65;">)</span><span style="color: #c678dd;">]</span><span style="color: #51afef;">)</span>
+<span style="color: #dcaeea;">X</span>, <span style="color: #dcaeea;">y</span>, <span style="color: #dcaeea;">X_test</span>, <span style="color: #dcaeea;">y_test</span> = X<span style="color: #51afef;">[</span>:N<span style="color: #51afef;">]</span>, y<span style="color: #51afef;">[</span>:N<span style="color: #51afef;">]</span>, X<span style="color: #51afef;">[</span>N:<span style="color: #51afef;">]</span>, y<span style="color: #51afef;">[</span>N:<span style="color: #51afef;">]</span>
+</pre>
+</div>
+
+<p>
+Since we have the data, we build and train the figure <a href="#org4233352">4</a> network.
+</p>
+
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 11: </span>Figure <a href="#org4233352">4</a> network</label><pre class="src src-python">np.random.seed<span style="color: #51afef;">(</span>0<span style="color: #51afef;">)</span>
+<span style="color: #dcaeea;">net</span> = Network<span style="color: #51afef;">(</span>X, y, structure=<span style="color: #c678dd;">[</span>10, 3, 2<span style="color: #c678dd;">]</span>, epochs=1000, bt_size=8, eta=0.3<span style="color: #51afef;">)</span>
+
+<span style="color: #5B6268;"># </span><span style="color: #5B6268;">train</span>
+net.tango<span style="color: #51afef;">()</span>
+
+<span style="color: #5B6268;"># </span><span style="color: #5B6268;">test</span>
+<span style="color: #dcaeea;">predictions</span> = np.array<span style="color: #51afef;">(</span><span style="color: #c678dd;">[</span>net.predict<span style="color: #98be65;">(</span>x.flatten<span style="color: #da8548;">()</span><span style="color: #98be65;">)</span> <span style="color: #51afef;">for</span> x <span style="color: #51afef;">in</span> X_test<span style="color: #c678dd;">]</span><span style="color: #51afef;">)</span>
+<span style="color: #dcaeea;">acc</span> = np.<span style="color: #c678dd;">sum</span><span style="color: #51afef;">(</span>predictions == y_test<span style="color: #51afef;">)</span> / <span style="color: #c678dd;">len</span><span style="color: #51afef;">(</span>y_test<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">print</span><span style="color: #51afef;">(</span><span style="color: #98be65;">'Network Accuracy: {}'</span>.<span style="color: #c678dd;">format</span><span style="color: #c678dd;">(</span>acc<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+We get the output:
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 12: </span>Figure <a href="#org4233352">4</a> network training output and accuracy</label><pre class="src src-shell">* Epoch:    0, Error: 0.48236
+* Epoch:    1, Error: 0.3234
+* Epoch:    2, Error: 0.16235
+* Epoch:    3, Error: 0.075001
+* Epoch:    4, Error: 0.040232
+* Epoch:    5, Error: 0.025256
+* Epoch:    6, Error: 0.017793
+* Epoch:    7, Error: 0.013523
+* Epoch:    8, Error: 0.010801
+* Epoch:    9, Error: 0.0089463
+<span style="color: #51afef;">[</span>snip<span style="color: #51afef;">]</span>
+* Epoch:  998, Error: 0.00004031
+* Epoch:  999, Error: 0.00004026
+Network Accuracy: 1.0
+</pre>
+</div>
+
+<p>
+Usually if you see an accuracy of 1, that should make you suspicious of having <a href="https://en.wikipedia.org/wiki/Overfitting">over-fit</a>. However, in this case, the parity classification of a binary number is pretty easy, i. e., we can just look at the least significant bit. In-fact, let's plot our two weight matrices to see if that is what the network learned.
+</p>
+
+
+<figure id="org75a4c8f">
+<object type="image/svg+xml" data="./media/matrix-plot.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+
+<figcaption><span class="figure-number">Figure 5: </span>Weights \(\mathcal{W}\) of the network in figure <a href="#org4233352">4</a></figcaption>
+</figure>
+
+<p>
+Looking at figure <a href="#org75a4c8f">5</a> and sure enough, training assigned the heaviest weight values to the least significant bit. This pattern shows that sometimes by looking at the weights, even humans can learn about new patterns or simply perform dimensionality reduction of the input \(\vec{x}\) (feature selection). 
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfe279f0" class="outline-3">
+<h3 id="orgfe279f0"><span class="section-number-3">7.2</span> Classifying Handwritten Digits</h3>
+<div class="outline-text-3" id="text-7-2">
+<p>
+The benchmark problem that all neural network tutorials solve is the <a href="../src/main.py">classification of the handwritten digits</a>. At the time of writing this article, the data is available for free at <a href="http://yann.lecun.com/exdb/mnist">http://yann.lecun.com/exdb/mnist</a>. If you are anything like me, you'll open that link and say to yourself, "Okay, wow, now what?". To deal with that feeling, I wrote a little downloader <a href="../src/mnsit_handwritten_digits.py">class</a> in Python that will download, read and reshape the data from that site into the format we want.
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 13: </span>Producing testing and training data sets</label><pre class="src src-python"><span style="color: #51afef;">from</span> mnsit_handwritten_digits <span style="color: #51afef;">import</span> MNSIT
+<span style="color: #51afef;">from</span> network <span style="color: #51afef;">import</span> Network
+<span style="color: #51afef;">import</span> numpy <span style="color: #51afef;">as</span> np
+
+<span style="color: #5B6268;"># </span><span style="color: #5B6268;">MNSIT Data</span>
+<span style="color: #dcaeea;">mn</span> = MNSIT<span style="color: #51afef;">(</span>path=<span style="color: #98be65;">'../mnsit_data/'</span><span style="color: #51afef;">)</span>
+mn.plot_image<span style="color: #51afef;">(</span>999, source=<span style="color: #98be65;">'training'</span><span style="color: #51afef;">)</span>
+<span style="color: #dcaeea;">train_X</span>, <span style="color: #dcaeea;">test_X</span>, <span style="color: #dcaeea;">train_y</span>, <span style="color: #dcaeea;">test_y</span> = mn.get_data<span style="color: #51afef;">()</span>
+</pre>
+</div>
+
+<p>
+You'll need <a href="https://matplotlib.org/">Matplotlib</a> for plotting. The line <code>mn.plot_image(999, source='training')</code> will plot the \(999^{th}\) image (figure <a href="#org0c13f34">6</a>) in the training set.
+</p>
+
+
+<figure id="org0c13f34">
+<object type="image/svg+xml" data="./media/mnsit-six.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+
+<figcaption><span class="figure-number">Figure 6: </span>\(999^{th}\) image in the MNSIT training set.</figcaption>
+</figure>
+
+<p>
+MNSIT images are normalised to dimensions \(28 \times 28 = 784\). We'll create a network with 3 layers:
+</p>
+
+<ol class="org-ol">
+<li>\(28^2 = 784\) neurons in the input layer to hold the activations caused by the pixel values in the flattened image.</li>
+<li>32 neurons in the hidden layer, for no particular reason.</li>
+<li>10 neurons in the output layer to hold the probabilities of each class <i>0</i> through <i>9</i>.</li>
+</ol>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 14: </span>Training a network to classify handwritten digits</label><pre class="src src-python"><span style="color: #5B6268;"># </span><span style="color: #5B6268;">Network</span>
+np.random.seed<span style="color: #51afef;">(</span>0<span style="color: #51afef;">)</span>
+<span style="color: #dcaeea;">net</span> = Network<span style="color: #51afef;">(</span>train_X,
+              train_y,
+              structure=<span style="color: #c678dd;">[</span>784, 32, 10<span style="color: #c678dd;">]</span>,
+              epochs=300,
+              bt_size=256<span style="color: #51afef;">)</span>
+<span style="color: #5B6268;"># </span><span style="color: #5B6268;">net.load_weights_biases(path='weights_biases.npy')</span>
+
+<span style="color: #5B6268;"># </span><span style="color: #5B6268;">train</span>
+net.tango<span style="color: #51afef;">()</span>
+<span style="color: #5B6268;"># </span><span style="color: #5B6268;">net.save_weights_biases(path='weights_biases.npy')</span>
+
+<span style="color: #5B6268;"># </span><span style="color: #5B6268;">test</span>
+<span style="color: #dcaeea;">predictions</span> = np.array<span style="color: #51afef;">(</span><span style="color: #c678dd;">[</span>net.predict<span style="color: #98be65;">(</span>x.flatten<span style="color: #da8548;">()</span><span style="color: #98be65;">)</span> <span style="color: #51afef;">for</span> x <span style="color: #51afef;">in</span> test_X<span style="color: #c678dd;">]</span><span style="color: #51afef;">)</span>
+<span style="color: #dcaeea;">acc</span> = np.<span style="color: #c678dd;">sum</span><span style="color: #51afef;">(</span>predictions == test_y<span style="color: #51afef;">)</span> / <span style="color: #c678dd;">len</span><span style="color: #51afef;">(</span>test_y<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">print</span><span style="color: #51afef;">(</span><span style="color: #98be65;">'Network Accuracy: {}'</span>.<span style="color: #c678dd;">format</span><span style="color: #c678dd;">(</span>acc<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Output after running,
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 15: </span>Network training output</label><pre class="src src-shell">* Epoch:    0, Error: 1.1664
+* Epoch:    1, Error: 0.837
+* Epoch:    2, Error: 0.74615
+* Epoch:    3, Error: 0.66387
+* Epoch:    4, Error: 0.61246
+* Epoch:    5, Error: 0.57026
+* Epoch:    6, Error: 0.54528
+* Epoch:    7, Error: 0.52077
+* Epoch:    8, Error: 0.49434
+* Epoch:    9, Error: 0.47249
+* Epoch:   10, Error: 0.44921
+<span style="color: #51afef;">[</span>snip<span style="color: #51afef;">]</span>
+* Epoch:   49, Error: 0.21924
+<span style="color: #51afef;">[</span>snip<span style="color: #51afef;">]</span>
+Network Accuracy: 0.9259
+</pre>
+</div>
+
+
+<p>
+The training time here will be longer depending on your machine. With the network above, I was able to achieve an accuracy of \(93\%\). You may load my converged set of \((\mathcal{W}, \mathbf{b})\) by uncommenting the line after the network instantiation. Make sure you give the correct path to the <a href="../src/weights_biases.npy">file</a> <code>weights_biases.npy</code> (and you should probably comment <code>net.tango()</code>).
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgfa12634" class="outline-2">
+<h2 id="orgfa12634"><span class="section-number-2">8</span> Other Resources</h2>
+<div class="outline-text-2" id="text-8">
+<p>
+Outside of the university classes, here are the resources I used to revise some of the relevant material.
+</p>
+
+<ol class="org-ol">
+<li>3Blue1Brown's <a href="https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi">YouTube series</a> on the Multi-layer Perceptrons.</li>
+<li>Michael Nielsen's book, <a href="http://neuralnetworksanddeeplearning.com/">Neural Networks and Deep Learning</a>.</li>
+</ol>
+
+<p>
+I'll leave with somewhat of a dichotomous sentiment:
+</p>
+
+<blockquote>
+<p>
+Learn from me, if not by my precepts, at least by my example, how dangerous is the acquirement of knowledge, and how much happier that man is who believes his native town to be his world, than he who aspires to become greater than his nature will allow [<a href="#shelley2013gutenberg">2</a>]. &#x2013; Mary Shelley, Frankenstein
+</p>
+</blockquote>
+
+
+<div id="bibliography">
+<h2>References</h2>
+
+<table>
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="russel2010pearson">1</a>]
+</td>
+<td class="bibtexitem">
+Stuart&nbsp;J Russell and Peter Norvig.
+ <em>Artificial Intelligence-A Modern Approach, Third Edition.</em>, page
+  122.
+ Pearson Education New Jersey, Upper Saddle River, New Jersey 07458,
+  third edition, 2010.
+[&nbsp;<a href="citations_bib.html#russel2010pearson">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="shelley2013gutenberg">2</a>]
+</td>
+<td class="bibtexitem">
+Mary&nbsp;W. Shelley.
+ <em>Frankenstein or, The Modern Prometheus</em>, chapter chapter 4.
+ PROJECT GUTENBERG, 2013.
+[&nbsp;<a href="citations_bib.html#shelley2013gutenberg">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="3354744">3</a>]
+</td>
+<td class="bibtexitem">
+user1180576 (https://math.stackexchange.com/users/629687/user1180576).
+ Informal derivation (and interpretation) of substitution rule from
+  chain rule?
+ Mathematics Stack Exchange.
+ URL:https://math.stackexchange.com/q/3354744 (version: 2019-09-13).
+[&nbsp;<a href="citations_bib.html#3354744">bib</a>&nbsp;| 
+<a href="http://arxiv.org/abs/https://math.stackexchange.com/q/3354744">arXiv</a>&nbsp;| 
+<a href="https://math.stackexchange.com/q/3354744">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="zins2013have">4</a>]
+</td>
+<td class="bibtexitem">
+M&nbsp;Zins.
+ What have we learnt from our mistakes?
+ <em>Diagnostic and interventional imaging</em>, 7(94):675, 2013.
+[&nbsp;<a href="citations_bib.html#zins2013have">bib</a>&nbsp;]
+
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+To report any mistakes or contact, send an email with the appropriate subject to <i>simurgh9(at)pm.me</i>.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> <div class="footpara"><p class="footpara">
+We assume the reader to be familiar with the prerequisite notation and code from a proper background or having read the first part.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.3" class="footnum" href="#fnr.3">3</a></sup> <div class="footpara"><p class="footpara">
+In reality we shoot for \(MSE\) to be <i>small enough</i> if not approximately zero.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.4" class="footnum" href="#fnr.4">4</a></sup> <div class="footpara"><p class="footpara">
+By \(\circleddash\) we mean element wise subtraction, i. e., for some \((\mathcal{W}, \mathbf{b})\) and \((\mathcal{W}, \mathbf{b})'\),
+</p>
+
+<p class="footpara">
+\[
+(\mathcal{W}, \mathbf{b}) \circleddash (\mathcal{W}, \mathbf{b})' =
+\{\{W^{(l)} \in \mathcal{W}, {W^{(l)}}' \in \mathcal{W}' : W^{(l)} - {W^{(l)}}'\},
+\{\vec{b}^{(l)} \in \mathbf{b}, {\vec{b}^{(l)}}' \in \mathbf{b}' : \vec{b}^{(l)} - {\vec{b}^{(l)}}'\}\}
+\]
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.5" class="footnum" href="#fnr.5">5</a></sup> <div class="footpara"><p class="footpara">
+As one of my math teachers once said, "before looking for something, make sure it exists". We need a few assumptions about our error function before we can expect to calculate its gradient and use gradient descent. I omitted those here for the sake of the focus on the actual gradient itself than a discussion of why we can calculate it.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.6" class="footnum" href="#fnr.6">6</a></sup> <div class="footpara"><p class="footpara">
+I have spent an embarrassing amount of time trying to truly understand the Leibniz's notation. You may also struggle with this switch from a ratio of infinitesimals to limits. <a href="https://math.stackexchange.com/q/21199/783364">Here</a> is a helpful Mathematics Stack Exchange question that finally cleared things up for me.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.7" class="footnum" href="#fnr.7">7</a></sup> <div class="footpara"><p class="footpara">
+By \(\odot\) we mean element wise multiplication. This is also known as the <i>Hadamard product</i>. Here is an example,
+</p>
+
+<p class="footpara">
+\[
+\left[\begin{array}{c} 1 \\ 3 \end{array}\right] 
+  \odot \left[\begin{array}{c} 2 \\ 4\end{array} \right]
+= \left[ \begin{array}{c} 1 \times 2 \\ 3 \times 4 \end{array} \right]
+= \left[ \begin{array}{c} 2 \\ 12 \end{array} \right]
+\]
+</p></div></div>
+
+
+</div>
+</div></div>
+<div id="postamble" class="status">
+<p class="author">Author: Tashfeen, Ahmad</p>
+<p class="date">Created: 2020-07-07 Tue 02:07</p>
+</div>
+</body>
+</html>

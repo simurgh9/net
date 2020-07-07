@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2020-06-28 Sun 22:15 -->
+<!-- 2020-07-07 Tue 02:07 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Neural Networks</title>
+<title>Neural Networks: The Forward Pass</title>
 <meta name="generator" content="Org mode">
-<meta name="author" content="Tashfeen">
+<meta name="author" content="Tashfeen, Ahmad">
 <link rel="stylesheet" type="text/css" href="css/org.css"/>
 <script type="text/javascript">
 /*
@@ -80,20 +80,19 @@ for the JavaScript code in this tag.
 <body>
 <div id="content">
 <header>
-<h1 class="title">Neural Networks</h1>
-<p class="subtitle">The Forward Pass</p>
+<h1 class="title">Neural Networks: The Forward Pass</h1>
+<p class="subtitle">Tashfeen, Ahmad</p>
 </header>
-<figure id="org34c8596">
-<img src="./media/russian-dolls.jpg" alt="russian-dolls.jpg">
+<figure id="orga0aeb34">
+<img src="./media/russian-dolls.jpg" alt="russian-dolls.jpg" width="85%">
 
-<figcaption><span class="figure-number">Figure 1: </span>Matryoshka Dolls</figcaption>
+<figcaption><span class="figure-number">Figure 1: </span>Matryoshka dolls</figcaption>
 </figure>
-
 
 
 <div class="abstract">
 <p>
-Believe nothing you hear, and only one-half that you see. [<a href="#poe1850system">4</a>] &#x2013; Edgar Allan Poe
+"Believe nothing you hear, and only one-half that you see." [<a href="#poe1850system">4</a>] &#x2013; Edgar Allan Poe
 </p>
 
 <p>
@@ -101,17 +100,17 @@ Many online resources are found with appendages: "in ten minutes", "made easy" a
 </p>
 
 <p>
-In this two-part article, we shall look at the mathematics and the code of a simple Neural Network, a. k. a., a Multi-layer Perceptron. In the first part we start with the math of a Neural Network's input-output dynamics, explain how the equations come to be and then write a Python class which implements them. In the second part we will follow-up with how exactly do we find the correct parameters to use in the input-output dynamics we learned in the first part.
+In this two-part article<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>, we shall look at the mathematics and the code of a simple Neural Network, a. k. a., a Multi-layer Perceptron. In this first part we start with the math of a Neural Network's input-output dynamics, explain how the equations come to be and then write a Python class which implements them. In the <a href="./two.html">second part</a> we will follow-up with how exactly do we find the correct parameters to use in the input-output dynamics we learned in the first part.
 </p>
 
 </div>
 
 
-<div id="outline-container-orgef805f0" class="outline-2">
-<h2 id="orgef805f0"><span class="section-number-2">1</span> The Function</h2>
+<div id="outline-container-org397d402" class="outline-2">
+<h2 id="org397d402"><span class="section-number-2">1</span> The Function</h2>
 <div class="outline-text-2" id="text-1">
 <p>
-Let's start with a fact that is somewhat calming. A neural network is just a <a href="https://en.wikipedia.org/wiki/Function_(mathematics)">mathematical function</a> which we will denote as \(f\). Even though a function, in our code, we shall implement a Python class<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>,
+Let's start with a fact that is somewhat calming. A neural network is just a <a href="https://en.wikipedia.org/wiki/Function_(mathematics)">mathematical function</a> which we will denote as \(f\). Even though a function, in our code, we shall implement a Python class<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup>,
 </p>
 
 <div class="org-src-container">
@@ -129,11 +128,11 @@ For now, you can ignore the input variables of the <code>__init__</code> definit
 </div>
 </div>
 
-<div id="outline-container-org0ba5b74" class="outline-2">
-<h2 id="org0ba5b74"><span class="section-number-2">2</span> A Simple Problem</h2>
+<div id="outline-container-org70b7965" class="outline-2">
+<h2 id="org70b7965"><span class="section-number-2">2</span> A Simple Problem</h2>
 <div class="outline-text-2" id="text-2">
 <p>
-Say the problem is to figure out a way of calculating the area of a square, given it's side-length. This problem can be modeled with two numbers: the side-length \(x \in \mathbb{R}\) and an area \(f(x) = y \in \mathbb{R}\). Now we can write the <a href="https://en.wikipedia.org/wiki/Domain_of_a_function">domain</a> and <a href="https://en.wikipedia.org/wiki/Codomain">codomain</a> like this \(f:\mathbb{R}\rightarrow \mathbb{R}\).
+Say the problem is to figure out a way of calculating the area of a square, given its side-length. This problem can be modeled with two numbers: the side-length \(x \in \mathbb{R}\) and an area \(f(x) = y \in \mathbb{R}\). Now we can write the <a href="https://en.wikipedia.org/wiki/Domain_of_a_function">domain</a> and <a href="https://en.wikipedia.org/wiki/Codomain">codomain</a> like this \(f:\mathbb{R}\rightarrow \mathbb{R}\).
 </p>
 
 <p>
@@ -147,28 +146,28 @@ We have modelled our problem and are aware of what the input and output of \(f\)
 </p>
 
 <p>
-Can you guess the function? Indeed! it is the polynomial \(f(x) = y = x^2\) and you just did a little bit of <i>machine learning</i> in your head. You looked at correct example inputs and outputs and generalised the idea into a general enough function.
+Can you guess the function? Indeed! it's the polynomial \(f(x) = y = x^2\) and you just did a little bit of <i>machine learning</i> in your head. You looked at correct example inputs and outputs and generalised the idea into a general enough function.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org6bce415" class="outline-2">
-<h2 id="org6bce415"><span class="section-number-2">3</span> General Problem Modellings</h2>
+<div id="outline-container-orgd4170d0" class="outline-2">
+<h2 id="orgd4170d0"><span class="section-number-2">3</span> General Problem Modellings</h2>
 <div class="outline-text-2" id="text-3">
 <p>
-In the above problem, we could model the input and output of our problem with just one number. What if instead of a singular value, our problem is best modelled when the inputs and outputs are lists of ordered values: \((\vec{x}, \vec{y})\) vectors? Then the domain and codomain of \(f\) can be written as \(f:\mathbb{R}^n\rightarrow \mathbb{R}^n\).
+In the above problem, we could model the input and output of our problem with just one number. What if instead of a singular value, our problem is best modelled when the inputs and outputs are lists of ordered values: \((\vec{x}, \vec{y})\) vectors? Then the domain and codomain of \(f\) can be written as \(f:\mathbb{R}^n\rightarrow \mathbb{R}^m\).
 </p>
 
 <p>
-A subset with \(N\) elements of this domain and codomain or input and output are passed to the <code>Network</code> definition above as the variables <code>X, y</code>. This is our sampled data of known examples. <code>X</code> \(\subset \mathbb{R}^n\) of dimensions/shape \((N, n)\) will be a 2D Numpy array of examples (inputs modelled as row arrays/vectors), where <code>y</code> \(\subset \mathbb{R}^n\) will a Numpy array containing the correct outputs which are also called labels.
+A subset with \(N\) elements of this domain and codomain or input and output are passed to the <code>Network</code> definition above as the variables <code>X, y</code>. This is our sampled data of known examples. <code>X</code> \(\subset \mathbb{R}^n\) of dimensions/shape \((N, n)\) will be a 2D Numpy array of examples (inputs modelled as row arrays/vectors), where <code>y</code> \(\subset \mathbb{R}^m\) will a Numpy array containing the correct outputs which are also called labels.
 </p>
 </div>
 
-<div id="outline-container-org92f17e1" class="outline-3">
-<h3 id="org92f17e1"><span class="section-number-3">3.1</span> Classification with One-hot Encoding</h3>
+<div id="outline-container-orgd3bb548" class="outline-3">
+<h3 id="orgd3bb548"><span class="section-number-3">3.1</span> Classification with One-hot Encoding</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
-Sometimes we model problems as <i>classification</i> of examples into discrete <i>classes</i>. This classification is based on certain <i>features</i> of any given example input \(\vec{x} \in\) <code>X</code>. Some \(x_i \in \vec{x}\) is considered a single feature. Therefore, the input \(\vec{x}\) can be thought of as a feature vector. Say our goal is to classify \(\vec{x}\) into three discrete classes. For some \(\vec{x} \in \mathbb{R}^n\), we could have a label \(y \in \{0, 1, 2\}\). But what if we wanted to model the label as the probabilities of \((\vec{x}, y)\) for all \(y \in \{0, 1, 2\}\)? We could rewrite a single label as a vector of probabilities \(\vec{y}\) where the probability that \(\vec{x}\) belongs to class \(i\) is \(y_i \in \vec{y}\). Notice how if we are absolutely certain that for some \(\vec{x}, (\vec{x}, 0)\) then \(\vec{y} = [1, 0, 0]\). Similarly for labels \(1, 2\) the output vectors \(\vec{y}\) will be \([0, 1, 0], [0, 0, 1]\). Such an encoding of labels is also known as <i>one-hot encoding</i>. Let's add this to our Python class<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup>,
+Sometimes we model problems as <i>classification</i> of examples into discrete <i>classes</i>. This classification is based on certain <i>features</i> of any given example input \(\vec{x} \in\) <code>X</code>. Some \(x_i \in \vec{x}\) is considered a single feature. Therefore, the input \(\vec{x}\) can be thought of as a feature vector. Say our goal is to classify \(\vec{x}\) into three discrete classes. For some \(\vec{x} \in \mathbb{R}^n\), we could have a label \(y \in \{0, 1, 2\}\). But what if we wanted to model the label as the probabilities of \((\vec{x}, y)\) for all \(y \in \{0, 1, 2\}\)? We could rewrite a single label as a vector of probabilities \(\vec{y}\) where the probability that \(\vec{x}\) belongs to class \(i\) is \(y_i \in \vec{y}\). Notice how if we are absolutely certain that for some \(\vec{x}, (\vec{x}, 0)\) then \(\vec{y} = [1, 0, 0]\). Similarly for labels \(1, 2\) the output vectors \(\vec{y}\) will be \([0, 1, 0], [0, 0, 1]\). Such an encoding of labels is also known as <i>one-hot encoding</i>. Let's add this to our Python class<sup><a id="fnr.3" class="footref" href="#fn.3">3</a></sup>.
 </p>
 
 <div class="org-src-container">
@@ -181,15 +180,15 @@ Sometimes we model problems as <i>classification</i> of examples into discrete <
 </div>
 </div>
 
-<div id="outline-container-org29d5989" class="outline-2">
-<h2 id="org29d5989"><span class="section-number-2">4</span> An Example Network</h2>
+<div id="outline-container-org9a66e72" class="outline-2">
+<h2 id="org9a66e72"><span class="section-number-2">4</span> An Example Network</h2>
 <div class="outline-text-2" id="text-4">
 <p>
-Now that we understand the input and output of \(f\), the question is that for some \(\vec{x}\), how should \(f\) map it to the desired \(\vec{y}\)? This process uses a layered architecture with a set of weights \(\mathcal{W}\) and biases \(\mathbf{b}\) and we call it <i>forward-feeding</i> or the <i>forward-pass</i>. We'll learn about forward feeding, weights and biases with a small running example before we generalise. Don't let figure <a href="#org2c8d94f">2</a> intimidate you, we'll break it down.
+Now that we understand the input and output of \(f\), the question is that for some \(\vec{x}\), how should \(f\) map it to the desired \(\vec{y}\)? This process uses a layered architecture with a set of weights \(\mathcal{W}\) and biases \(\mathbf{b}\) and we call it <i>forward-feeding</i> or the <i>forward-pass</i>. We'll learn about forward feeding, weights and biases with a small running example before we generalise. Don't let figure <a href="#orgbddcdd4">2</a> intimidate you. We'll break it down.
 </p>
 
 
-<figure id="org2c8d94f">
+<figure id="orgbddcdd4">
 <object type="image/svg+xml" data="./media/mlp3.svg" class="org-svg" width="60%">
 Sorry, your browser does not support SVG.</object>
 
@@ -198,28 +197,27 @@ Sorry, your browser does not support SVG.</object>
 </div>
 </div>
 
-
-<div id="outline-container-org8883c1b" class="outline-2">
-<h2 id="org8883c1b"><span class="section-number-2">5</span> Layered Architecture</h2>
+<div id="outline-container-org7f7f187" class="outline-2">
+<h2 id="org7f7f187"><span class="section-number-2">5</span> Layered Architecture</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 For now ignore all the edges and labels and just look at the green, blue and red vertices. If without any further explanation I ask you to tell me how many <i>layers</i> are in this network, you might say three. Then, if I ask you to give me the number of <i>neurons</i> in each layer, you might say \([5, 4, 2]\). You'd be right in both cases!
 </p>
 
 <p>
-The first layer in this three-layered Multi-layer Perceptron is the first green column on the left hand side. This layer corresponds to the length of our example input \(\vec{x} \in \mathbb{R}^5\). After the input layer, we have hidden layers which in the figure <a href="#org2c8d94f">2</a>'s network, there is only one; the blue one with four neurons. Note that even though we have only one hidden layer, it is entirely possible for some other network to have more! After the hidden layers, we'll see the output layer. This layer corresponds to the output \(\vec{y}\). Here we read what the output of our network is after a success forward pass. Thus, the network in figure <a href="#org2c8d94f">2</a> can be written in the function notation like this, \(f:\mathbb{R}^5\rightarrow \mathbb{R}^2\).
+The first layer in this three-layered Multi-layer Perceptron is the first green column on the left hand side. This layer corresponds to the length of our example input \(\vec{x} \in \mathbb{R}^5\). After the input layer, we have hidden layers. of which in the figure <a href="#orgbddcdd4">2</a>'s network, there is only one: the blue one with four neurons. Note that even though we have only one hidden layer, it is entirely possible for some other network to have more! After the hidden layers, we'll see the output layer. This layer corresponds to the output \(\vec{y}\). Here we read what the output of our network is after a success forward pass. Thus, the network in figure <a href="#orgbddcdd4">2</a> can be written in the function notation like this, \(f:\mathbb{R}^5\rightarrow \mathbb{R}^2\).
 </p>
 </div>
 
-<div id="outline-container-org337e200" class="outline-3">
-<h3 id="org337e200"><span class="section-number-3">5.1</span> Layer Indices Notation</h3>
+<div id="outline-container-org929454a" class="outline-3">
+<h3 id="org929454a"><span class="section-number-3">5.1</span> Layer Indices Notation</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
-We use the variable \(l \in \mathbb{N}\) for the index of any particular layer where the \(l\) corresponding to the output layer is capitalised as \(L\). In short, the variable we use for the index of all but last layer is \(l\) and the index of the last layer is \(L\), e. g., for the network in figure <a href="#org2c8d94f">2</a>, we know that layer \(l=1\) has five neurons, layer \(l=2\) has four neurons and layer \(l=L=3\) has two neurons. I'll denote the number of neurons in a layer \(l\) as \(|l|\) consequently the number of neurons in the output layer is \(|L|\)<sup><a id="fnr.3" class="footref" href="#fn.3">3</a></sup>.
+We use the variable \(l \in \mathbb{N}\) for the index of any particular layer where the \(l\) corresponding to the output layer is capitalised as \(L\). In short, the variable we use for the index of all but last layer is \(l\) and the index of the last layer is \(L\) (e. g., for the network in figure <a href="#orgbddcdd4">2</a>, we know that layer \(l=1\) has five neurons, layer \(l=2\) has four neurons and layer \(l=L=3\) has two neurons). I'll denote the number of neurons in a layer \(l\) as \(|l|\); consequently the number of neurons in the output layer is \(|L|\)<sup><a id="fnr.4" class="footref" href="#fn.4">4</a></sup>.
 </p>
 
 <p>
-We pass this structure of layers about how many neurons we want per layer as list to the Python class with the variable <code>structure</code>. For the network in figure <a href="#org2c8d94f">2</a>, <code>structure = [5, 4, 2]</code>.
+We pass this structure of layers about how many neurons we want per layer as list to the Python class with the variable <code>structure</code>. For the network in figure <a href="#orgbddcdd4">2</a>, <code>structure = [5, 4, 2]</code>.
 </p>
 
 <div class="org-src-container">
@@ -234,31 +232,31 @@ We pass this structure of layers about how many neurons we want per layer as lis
 </div>
 
 <p>
-You can ignore the variables <code>epochs, bt_size, eta</code>. We assigned the structure array and <code>self.L</code>. Remember that due the zero based indexing of arrays, the index of the last layer here will be <code>self.L-1</code>.
+You can ignore the variables <code>epochs, bt_size, eta</code>. We assigned the structure array and <code>self.L</code>. Remember that due the <i>zero-based-indexing</i> of arrays, the index of the last layer here will be <code>self.L-1</code>.
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org433a323" class="outline-2">
-<h2 id="org433a323"><span class="section-number-2">6</span> Weights and Biases</h2>
+<div id="outline-container-org03381c5" class="outline-2">
+<h2 id="org03381c5"><span class="section-number-2">6</span> Weights and Biases</h2>
 <div class="outline-text-2" id="text-6">
 <p>
-Now that we understand the vertices/neurons in the layers of a network. We are ready to see how the network \(f\) takes \(\vec{x}\) and feeds it forward through all the layers \(l < L\), arriving at the output layer \(L\). The heart of it all is in matrix multiplication. If you don't recall the basics of it, this is a good time to brush-up. The set \(\mathcal{W}\) is a set of matrices, similarly, the set \(\mathbf{b}\) is a set of vectors. For a network with \(L\) layers, we have \(L-1\) many matrices in \(\mathcal{W}\) and vectors in \(\mathbf{b}\).
+Now that we understand the vertices/neurons in the layers of a network. We are ready to see how the network \(f\) takes \(\vec{x}\) and feeds it forward through all the layers \(l < L\), arriving at the output layer \(L\). The heart of it all is in matrix multiplication. If you don't recall the basics of it, this is a good time to brush-up. The set \(\mathcal{W}\) is a set of matrices; similarly, the set \(\mathbf{b}\) is a set of vectors. For a network with \(L\) layers, we have \(L-1\) many matrices in \(\mathcal{W}\) and vectors in \(\mathbf{b}\).
 </p>
 </div>
 
-<div id="outline-container-orgc253b2a" class="outline-3">
-<h3 id="orgc253b2a"><span class="section-number-3">6.1</span> Activations in Layers</h3>
+<div id="outline-container-orgc00d13c" class="outline-3">
+<h3 id="orgc00d13c"><span class="section-number-3">6.1</span> Activations in Layers</h3>
 <div class="outline-text-3" id="text-6-1">
 <p>
-All layers hold an activation vector \(\vec{a} \in \mathbb{R}^n\), we denote the activation vector of layer \(l\) as \(\vec{a}^{(l)}\). Be cautious, the \((l)\) here is not a power or exponent but the index of the layer whose activation vector is \(\vec{a}^{(l)}\). An activation being held in a certain neuron of a certain layer is then denoted as \(a^{(l)}_i \in \vec{a}^{(l)}\). Notice the edges (arrows) going from layer to layer in the figure <a href="#org2c8d94f">2</a>? An <i>edge</i> that connects \(i^{th}\) neuron in layer \(l-1\) to \(j^{th}\) neuron in layer \(l\) is representing the element \(w_{ji} \in W^{(l)} \in \mathcal{W}\). At this point, you should be new but somewhat familiar with the anatomy of the network shown in figure <a href="#org2c8d94f">2</a>.
+All layers hold an activation vector \(\vec{a} \in \mathbb{R}^n\). We denote the activation vector of layer \(l\) as \(\vec{a}^{(l)}\). Be cautious. The \((l)\) here is not a power or exponent but the index of the layer whose activation vector is \(\vec{a}^{(l)}\). An activation being held in a certain neuron of a certain layer is then denoted as \(a^{(l)}_i \in \vec{a}^{(l)}\). Notice the edges (arrows) going from layer to layer in the figure <a href="#orgbddcdd4">2</a>? An <i>edge</i> that connects \(i^{th}\) neuron in layer \(l-1\) to \(j^{th}\) neuron in layer \(l\) is representing the element \(w_{ji} \in W^{(l)} \in \mathcal{W}\). By now, you should be feeling more familiar with the anatomy of the network shown in figure <a href="#orgbddcdd4">2</a>.
 </p>
 </div>
 </div>
 
-<div id="outline-container-orga134b33" class="outline-3">
-<h3 id="orga134b33"><span class="section-number-3">6.2</span> Propagating Activations Forward</h3>
+<div id="outline-container-orge89c680" class="outline-3">
+<h3 id="orge89c680"><span class="section-number-3">6.2</span> Propagating Activations Forward</h3>
 <div class="outline-text-3" id="text-6-2">
 <p>
 How do we get the activations in the first (input) layer? We simply let it equal to our input vector,
@@ -271,7 +269,7 @@ How do we get the activations in the first (input) layer? We simply let it equal
 </p>
 
 <p>
-Now that we have \(\vec{a}^{(1)}\), how do we get \(\vec{a}^{(2)}\)? We write \(\vec{a}^{(2)}\) as a function<sup><a id="fnr.4" class="footref" href="#fn.4">4</a></sup> of \(\vec{a}^{(1)}\), the weight matrix \(W^{(2)} \in \mathcal{W}\) and the first bias vector \(\vec{b}^{(2)} \in \mathbf{b}\)<sup><a id="fnr.5" class="footref" href="#fn.5">5</a></sup>.
+Now that we have \(\vec{a}^{(1)}\), how do we get \(\vec{a}^{(2)}\)? We write \(\vec{a}^{(2)}\) as a function<sup><a id="fnr.5" class="footref" href="#fn.5">5</a></sup> of \(\vec{a}^{(1)}\), the weight matrix \(W^{(2)} \in \mathcal{W}\) and the first bias vector \(\vec{b}^{(2)} \in \mathbf{b}\)<sup><a id="fnr.6" class="footref" href="#fn.6">6</a></sup>.
 </p>
 
 <p>
@@ -281,7 +279,7 @@ Now that we have \(\vec{a}^{(1)}\), how do we get \(\vec{a}^{(2)}\)? We write \(
 </p>
 
 <p>
-There are some subtle observations that must be made here which will help us write the code. We introduced another function \(\sigma\). Since we refer to \(W^{(2)}\vec{a}^{(1)} + \vec{b}^{(2)}\) on it's own quite often and there are other notational benefits, let \(\vec{z}^{(2)} = W^{(2)}\vec{a}^{(1)} + \vec{b}^{(2)}\). Pause here and think about what will be the dimensions of \(\vec{z}^{(l)}\) for \(l=2\)? We are going from layer 1 to layer 2 so the dimensions of \(\vec{z}^{(l)}\) must be \((|l|, 1)\). This is just saying that \(\vec{a}^{(2)}\) is a vector with \(|l|\) neurons. This should remind you that for multiplication to be valid between two matrices, the first's number of columns should be equal to the second's number of rows! This means that any \(W^{(l)} \in \mathcal{W}\) that gets you from layer \(l-1\) to \(l\) has dimensions \((|l|, |l-1|)\) and \(\vec{b}^{(l)} \in \mathbf{b}\) has \(|l|\) many elements. Therefore, when we multiply \(W^{(l)}\) with dimensions \((|l|, |l-1|)\) to \(\vec{a}^{(l-1)}\) with dimensions \((|l-1|, 1)\) and add \(\vec{b}^{(l)}\) with dimensions \((|l|, 1)\), we get \(\vec{z}^{(l)}\) with dimensions \((|l|, 1)\).
+There are some subtle observations that must be made here that will help us write the code. We introduced another function \(\sigma\). Since we refer to \(W^{(2)}\vec{a}^{(1)} + \vec{b}^{(2)}\) on its own quite often and there are other notational benefits, let \(\vec{z}^{(2)} = W^{(2)}\vec{a}^{(1)} + \vec{b}^{(2)}\). Pause here and think about what will be the dimensions of \(\vec{z}^{(l)}\) for \(l=2\)? We are going from layer 1 to layer 2 so the dimensions of \(\vec{z}^{(l)}\) must be \((|l|, 1)\). This is just saying that \(\vec{a}^{(2)}\) is a vector with \(|l|\) neurons. This should remind you that for multiplication to be valid between two matrices, the first's number of columns should be equal to the second's number of rows! This means that any \(W^{(l)} \in \mathcal{W}\) that gets you from layer \(l-1\) to \(l\) has dimensions \((|l|, |l-1|)\) and \(\vec{b}^{(l)} \in \mathbf{b}\) has \(|l|\) many elements. Therefore, when we multiply \(W^{(l)}\) with dimensions \((|l|, |l-1|)\) to \(\vec{a}^{(l-1)}\) with dimensions \((|l-1|, 1)\) and add \(\vec{b}^{(l)}\) with dimensions \((|l|, 1)\), we get \(\vec{z}^{(l)}\) with dimensions \((|l|, 1)\).
 </p>
 
 <p>
@@ -301,8 +299,8 @@ At this point we let \(\vec{z}^{(l)} = W^{(l)}\vec{a}^{(l-1)} + \vec{b}^{(l)}\) 
 </div>
 </div>
 
-<div id="outline-container-org5fabacd" class="outline-3">
-<h3 id="org5fabacd"><span class="section-number-3">6.3</span> Random Weights and Biases</h3>
+<div id="outline-container-org5224282" class="outline-3">
+<h3 id="org5224282"><span class="section-number-3">6.3</span> Random Weights and Biases</h3>
 <div class="outline-text-3" id="text-6-3">
 <p>
 A question that I have sleekly avoided so far is how do we find these so called weights and biases sets \((\mathcal{W}, \mathbf{b})\) that enable the network \(f\) to map \(\vec{x}\) to it's expected \(\vec{y}\). This is where <i>machine learning</i> and sample examples come in, which we passed to our network definition as <code>X, y</code>. For now, we just initialise \((\mathcal{W}, \mathbf{b})\) randomly from a normal distribution. We initialise \((\mathcal{W}, \mathbf{b})\) randomly though with correct dimensions, inferring them from <code>self.structure</code>. Remember how all \(W^{(l)} \in \mathcal{W}\) must have dimensions \((|l|, |l-1|)\) and \(\vec{b}^{(l)} \in \mathbf{b}\) must have \(|l|\) many elements? We just initialise them randomly. Let's finish the definition of <code>__init__</code>.
@@ -335,12 +333,11 @@ A question that I have sleekly avoided so far is how do we find these so called 
 </div>
 </div>
 
-
-<div id="outline-container-org1a6634d" class="outline-3">
-<h3 id="org1a6634d"><span class="section-number-3">6.4</span> Sigmoid Logistic Function</h3>
+<div id="outline-container-orga8fa58a" class="outline-3">
+<h3 id="orga8fa58a"><span class="section-number-3">6.4</span> Sigmoid Logistic Function</h3>
 <div class="outline-text-3" id="text-6-4">
 <p>
-The new \(\sigma(x) = \frac{1}{1+e^{-x}}\) is the sigmoid function. It's job is to take any real value and map it to \((0,1)\). In other words, \(\sigma\) scales everything to a number between zero and one. This means that we want our activations to be between zero and one. When we pass a vector to \(\sigma\), we mean,
+The new \(\sigma(x) = \frac{1}{1+e^{-x}}\) is the sigmoid function. Its job is to take any real value and map it to \((0,1)\). In other words, \(\sigma\) scales everything to a number between zero and one. This means that we want our activations to be between zero and one. When we pass a vector to \(\sigma\), we mean,
 </p>
 
 <p>
@@ -350,7 +347,7 @@ The new \(\sigma(x) = \frac{1}{1+e^{-x}}\) is the sigmoid function. It's job is 
 </p>
 
 
-<figure id="org41cb0dd">
+<figure id="org8d5a04b">
 <object type="image/svg+xml" data="./media/sigmoid-graph.svg" class="org-svg" width="70%">
 Sorry, your browser does not support SVG.</object>
 
@@ -358,7 +355,7 @@ Sorry, your browser does not support SVG.</object>
 </figure>
 
 <p>
-Figure <a href="#org41cb0dd">3</a> shows a graph [<a href="#thoma2014wikimedia">3</a>] of the sigmoid. Later we'll also be needing the first derivative of the sigmoid function \(\sigma'(x) = \sigma(x)(1-\sigma(x))\), so let's add the sigmoid function with a derivative flag to our code.
+Figure <a href="#org8d5a04b">3</a> shows a graph [<a href="#thoma2014wikimedia">3</a>] of the sigmoid. Later we'll also be needing the first derivative of the sigmoid function \(\sigma'(x) = \sigma(x)(1-\sigma(x))\), so let's add the sigmoid function with a derivative flag to our code.
 </p>
 
 <div class="org-src-container">
@@ -371,12 +368,12 @@ Figure <a href="#org41cb0dd">3</a> shows a graph [<a href="#thoma2014wikimedia">
 </div>
 </div>
 
-<div id="outline-container-orgdd0e8ff" class="outline-2">
-<h2 id="orgdd0e8ff"><span class="section-number-2">7</span> Writing Activations Explicitly</h2>
+<div id="outline-container-org056bc77" class="outline-2">
+<h2 id="org056bc77"><span class="section-number-2">7</span> Writing Activations Explicitly</h2>
 <div class="outline-text-2" id="text-7">
 <p>
-  We know that a simple neural network \(f:\mathbb{R}^n \rightarrow \mathbb{R}^n\) starts with \(\vec{a}^{(1)} = \vec{x} \in \mathbb{R}^n\) then performs \(L-1\) matrix multiplications as shown in equation (1) and (2) and arrives at \(\vec{a}^{(L)} = \vec{y} \in \mathbb{R}^n\).
-For a network as small as the one shown in figure <a href="#org2c8d94f">2</a>, we can write out the equations for all of it's activations. We will also write out the sets \((\mathcal{W}, \mathbf{b})\) with their correctly shaped elements. Since we have three \(L=3\) layers in the Multi-layer Perceptron of figure <a href="#org2c8d94f">2</a>, we will have \(L-1 = 3-1 = 2\) weight matrices and bias vectors.
+  We know that a simple neural network \(f:\mathbb{R}^n \rightarrow \mathbb{R}^m\) starts with \(\vec{a}^{(1)} = \vec{x} \in \mathbb{R}^n\) then performs \(L-1\) matrix multiplications as shown in equation (1) and (2) and arrives at \(\vec{a}^{(L)} = \vec{y} \in \mathbb{R}^m\).
+For a network as small as the one shown in figure <a href="#orgbddcdd4">2</a>, we can write out the equations for all of its activations. We will also write out the sets \((\mathcal{W}, \mathbf{b})\) with their correctly shaped elements. Since we have three \(L=3\) layers in the Multi-layer Perceptron of figure <a href="#orgbddcdd4">2</a>, we will have \(L-1 = 3-1 = 2\) weight matrices and bias vectors.
 </p>
 
 \begin{align*}
@@ -415,9 +412,8 @@ Let's generalise and implement forward feeding of any given \(\vec{x}\). We'll w
 </div>
 </div>
 
-
-<div id="outline-container-orgee445c3" class="outline-2">
-<h2 id="orgee445c3"><span class="section-number-2">8</span> Testing Code and Assumptions</h2>
+<div id="outline-container-org5fc7427" class="outline-2">
+<h2 id="org5fc7427"><span class="section-number-2">8</span> Testing Code and Assumptions</h2>
 <div class="outline-text-2" id="text-8">
 <blockquote>
 <p>
@@ -442,7 +438,7 @@ It's time to test the code we have so far and see if it performs as per our assu
 </div>
 
 <p>
-Let's build the network in figure <a href="#org2c8d94f">2</a>. We know the number of neurons in each of it's layers is 5, 4 and 2. Therefore, we'll let <code>structure = [5, 4, 2]</code>. Even though we won't be training this network just yet, we'll still need to pass some mock examples so we can initialise it. For now we can just put this test code in the same file <code>network.py</code> after the <code>Network</code> class definition so we don't have to figure out imports. 
+Let's build the network in figure <a href="#orgbddcdd4">2</a>. We know the number of neurons in each of its layers is 5, 4 and 2. Therefore, we'll let <code>structure = [5, 4, 2]</code>. Even though we won't be training this network just yet, we'll still need to pass some mock examples so we can initialise it. For now we can just put this test code in the same <a href="../src/network.py">file</a> <code>network.py</code> after the <code>Network</code> class definition so we don't have to figure out imports. 
 </p>
 
 <div class="org-src-container">
@@ -501,15 +497,15 @@ Can you tell why this output is correct?
 </div>
 </div>
 
-<div id="outline-container-org4c9f6cc" class="outline-2">
-<h2 id="org4c9f6cc"><span class="section-number-2">9</span> Matryoshka Dolls</h2>
+<div id="outline-container-org6b399e9" class="outline-2">
+<h2 id="org6b399e9"><span class="section-number-2">9</span> Matryoshka Dolls</h2>
 <div class="outline-text-2" id="text-9">
 <p>
-The banner [<a href="#russian2020dolls">1</a>] of this article is of <a href="https://en.wikipedia.org/wiki/Matryoshka_doll">Matryoshka Dolls</a>. Why? They resemble a Multi-layer Perceptron in structure [<a href="#vermont2020dolls">2</a>]. Think of the outer most doll as the input layer. She takes the input vector \(\vec{x}\), <del>performs the forward feeding</del> says her little magic spell to get the next activation and passes it onto the next doll within. When the propagation reaches the doll present at the innermost layer, we uncap all the dolls and ask the innermost doll for the output \(\vec{y}\). What if it's not correct \(\hat{\vec{y}} \neq \vec{y}\)?
+The banner [<a href="#russian2020dolls">1</a>] of this article is of <a href="https://en.wikipedia.org/wiki/Matryoshka_doll">Matryoshka Dolls</a>. Why? They resemble a Multi-layer Perceptron in structure [<a href="#vermont2020dolls">2</a>]. Think of the outermost doll as the input layer. She takes the input vector \(\vec{x}\), <del>performs the forward feeding</del> says her little magic spell to get the next activation and passes it onto the next doll within. When the propagation reaches the doll present at the innermost layer, we uncap all the dolls and ask the innermost doll for the output \(\vec{y}\). What if it's not correct \(\hat{\vec{y}} \neq \vec{y}\)?
 </p>
 
 
-<figure id="org9c7f136">
+<figure id="org7e09008">
 <img src="./media/final-dolls.png" alt="final-dolls.png">
 
 <figcaption><span class="figure-number">Figure 4: </span>Matryoshka Layers</figcaption>
@@ -599,22 +595,26 @@ Walter&nbsp;F Tichy, Paul Lukowicz, Lutz Prechelt, and Ernst&nbsp;A Heinz.
 <div id="text-footnotes">
 
 <div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
-I will use only vanilla Python 3, with the famous library <a href="https://numpy.org/">Numpy</a> for fast vectorised array operations and linear algebra.
+To report any mistakes or contact, send an email with the appropriate subject to <i>simurgh9(at)pm.me</i>.
 </p></div></div>
 
 <div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> <div class="footpara"><p class="footpara">
-We're making this <code>Network</code> class keeping classification in mind. Though we can do regression with the final product by changing only a few line.
+I will use only vanilla Python 3, with the famous library <a href="https://numpy.org/">Numpy</a> for fast vectorised array operations and linear algebra.
 </p></div></div>
 
 <div class="footdef"><sup><a id="fn.3" class="footnum" href="#fnr.3">3</a></sup> <div class="footpara"><p class="footpara">
-I am not sure if denoting the number of neurons in layer \(l\) as \(|l|\) is the standard notation. But, indexing layers with \(l\) is.
+We're making this <code>Network</code> class keeping classification in mind. Though we can do regression with the final product by changing only a few line.
 </p></div></div>
 
 <div class="footdef"><sup><a id="fn.4" class="footnum" href="#fnr.4">4</a></sup> <div class="footpara"><p class="footpara">
-You maybe confused that at the start of we called \(\vec{a}\) a vector and now we are calling it a function? Think of it like this: activations are functions that evaluate to a vector \(\vec{a}^{(l)}\).
+I am not sure if denoting the number of neurons in layer \(l\) as \(|l|\) is the standard notation. But, indexing layers with \(l\) is.
 </p></div></div>
 
 <div class="footdef"><sup><a id="fn.5" class="footnum" href="#fnr.5">5</a></sup> <div class="footpara"><p class="footpara">
+You maybe confused that at the start of we called \(\vec{a}\) a vector and now we are calling it a function? Think of it like this: activations are functions that evaluate to a vector \(\vec{a}^{(l)}\).
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.6" class="footnum" href="#fnr.6">6</a></sup> <div class="footpara"><p class="footpara">
 Note that \(W^{l} \in \mathcal{W}\) and \(b^{(l)} \in \mathbf{b}\) are written with the index of a layer in the superscript and not an exponent. Just like the activation \(\vec{a}^{(l)}\).
 </p></div></div>
 
@@ -622,8 +622,8 @@ Note that \(W^{l} \in \mathcal{W}\) and \(b^{(l)} \in \mathbf{b}\) are written w
 </div>
 </div></div>
 <div id="postamble" class="status">
-<p class="author">Author: Tashfeen</p>
-<p class="date">Created: 2020-06-28 Sun 22:15</p>
+<p class="author">Author: Tashfeen, Ahmad</p>
+<p class="date">Created: 2020-07-07 Tue 02:07</p>
 </div>
 </body>
 </html>
