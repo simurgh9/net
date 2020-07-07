@@ -301,7 +301,7 @@ The banner [[cite:russian2020dolls]] of this article is of [[https://en.wikipedi
 
 #+BIBLIOGRAPHY: citations plain limit:t option:-nokeywords
 
-[fn:contact] To report any mistakes or contact, send an email with the appropriate subject to /simurgh9(at)pm.me/.
+[fn:contact] To report any mistakes or contact me, send an email with the appropriate subject to /simurgh9(at)pm.me/.
 
 [fn:1] I will use only vanilla Python 3, with the famous library [[https://numpy.org/][Numpy]] for fast vectorised array operations and linear algebra.
 [fn:2] We're making this ~Network~ class keeping classification in mind. Though we can do regression with the final product by changing only a few line.

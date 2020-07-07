@@ -425,10 +425,10 @@ For the network in figure [[fig:mlp-bin]], we have the following weights, biases
    #+END_SRC
 
 * Testing Code and Assumptions
-  You can find the complete =Network= class we wrote in the file: =network.py= at [[https://github.com/simurgh9/net][Github]] or [[../src/network.py][here]].
+  You can find the complete =Network= class we wrote in the file: =network.py= at [[https://github.com/simurgh9/net/blob/master/src/network.py][Github]] or [[https://raw.githubusercontent.com/simurgh9/net/master/src/network.py][here]].
 
 ** Classifying Binary Numbers per Parity
-  Let's first test =network.py= by [[../src/parity.py][building and training]] the network in figure [[fig:mlp-bin]]. We produce the [[https://en.wikipedia.org/wiki/Training,_validation,_and_test_sets][training and testing examples]] (skipping validation). The training examples are what we pass as ~X, y~. The testing examples are the ones we use to test the accuracy of a trained network. We don't train the network on this set for the sake of an unbiased measure of performance.
+  Let's first test =network.py= by [[https://github.com/simurgh9/net/blob/master/src/parity.py][building and training]] the network in figure [[fig:mlp-bin]]. We produce the [[https://en.wikipedia.org/wiki/Training,_validation,_and_test_sets][training and testing examples]] (skipping validation). The training examples are what we pass as ~X, y~. The testing examples are the ones we use to test the accuracy of a trained network. We don't train the network on this set for the sake of an unbiased measure of performance.
 
   \[
   \text{Accuracy} = ACC = \frac{\text{Number of Correctly Classified Examples in Test Set}}{\text{Number of Incorrectly Classified Examples in Test Set}}
@@ -494,7 +494,7 @@ For the network in figure [[fig:mlp-bin]], we have the following weights, biases
    Looking at figure [[fig:matrix-plot]] and sure enough, training assigned the heaviest weight values to the least significant bit. This pattern shows that sometimes by looking at the weights, even humans can learn about new patterns or simply perform dimensionality reduction of the input $\vec{x}$ (feature selection). 
 
 ** Classifying Handwritten Digits
-   The benchmark problem that all neural network tutorials solve is the [[../src/main.py][classification of the handwritten digits]]. At the time of writing this article, the data is available for free at [[http://yann.lecun.com/exdb/mnist]]. If you are anything like me, you'll open that link and say to yourself, "Okay, wow, now what?". To deal with that feeling, I wrote a little downloader [[../src/mnsit_handwritten_digits.py][class]] in Python that will download, read and reshape the data from that site into the format we want.
+   The benchmark problem that all neural network tutorials solve is the [[https://github.com/simurgh9/net/blob/master/src/main.py][classification of the handwritten digits]]. At the time of writing this article, the data is available for free at [[http://yann.lecun.com/exdb/mnist]]. If you are anything like me, you'll open that link and say to yourself, "Okay, wow, now what?". To deal with that feeling, I wrote a little downloader [[https://github.com/simurgh9/net/blob/master/src/mnsit_handwritten_digits.py][class]] in Python that will download, read and reshape the data from that site into the format we want.
 
    #+CAPTION: Producing testing and training data sets
    #+ATTR_LATEX: :options frame=single
@@ -566,7 +566,7 @@ For the network in figure [[fig:mlp-bin]], we have the following weights, biases
    #+END_SRC
 
 
-   The training time here will be longer depending on your machine. With the network above, I was able to achieve an accuracy of $93\%$. You may load my converged set of $(\mathcal{W}, \mathbf{b})$ by uncommenting the line after the network instantiation. Make sure you give the correct path to the [[../src/weights_biases.npy][file]] =weights_biases.npy= (and you should probably comment ~net.tango()~).
+   The training time here will be longer depending on your machine. With the network above, I was able to achieve an accuracy of $93\%$. You may load my converged set of $(\mathcal{W}, \mathbf{b})$ by uncommenting the line after the network instantiation. Make sure you give the correct path to the [[https://github.com/simurgh9/net/blob/master/src/weights_biases.npy][file]] =weights_biases.npy= (and you should probably comment ~net.tango()~).
 
 * Other Resources
   Outside of the university classes, here are the resources I used to revise some of the relevant material.
@@ -583,7 +583,7 @@ Learn from me, if not by my precepts, at least by my example, how dangerous is t
 
 #+BIBLIOGRAPHY: citations plain limit:t option:-nokeywords
 
-[fn:contact] To report any mistakes or contact, send an email with the appropriate subject to /simurgh9(at)pm.me/.
+[fn:contact] To report any mistakes or contact me, send an email with the appropriate subject to /simurgh9(at)pm.me/.
 
 [fn:0] We assume the reader to be familiar with the prerequisite notation and code from a proper background or having read the first part.
 [fn:1] In reality we shoot for $MSE$ to be /small enough/ if not approximately zero.
