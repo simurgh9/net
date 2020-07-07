@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2020-07-07 Tue 02:07 -->
+<!-- 2020-07-07 Tue 02:37 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Neural Networks: The Backward Pass</title>
@@ -83,7 +83,7 @@ for the JavaScript code in this tag.
 <h1 class="title">Neural Networks: The Backward Pass</h1>
 <p class="subtitle">Tashfeen, Ahmad</p>
 </header>
-<figure id="orgd922cfb">
+<figure id="org1c61086">
 <img src="./media/learning.png" alt="learning.png">
 
 <figcaption><span class="figure-number">Figure 1: </span>Learning from mistakes</figcaption>
@@ -102,8 +102,8 @@ This is the second part of the article<sup><a id="fnr.1" class="footref" href="#
 </div>
 
 
-<div id="outline-container-org83ed39b" class="outline-2">
-<h2 id="org83ed39b"><span class="section-number-2">1</span> Error in the Network</h2>
+<div id="outline-container-org382130b" class="outline-2">
+<h2 id="org382130b"><span class="section-number-2">1</span> Error in the Network</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 We denote our sample examples passed to the <code>Network</code> as <code>X, y</code> Numpy arrays with sets \(\mathcal{X} \subset \mathbb{R}^n\) and \(\mathbf{y}\subset \{0, 1\}^m\) (one-hot encodings), \(n,m \in \mathbb{N}\). With random \((\mathcal{W}, \mathbf{b})\), we have no reason to expect the network to behave in any reasonable way. Right now, it is as good as a guessing machine. How good is a guessing machine though? We need a way to measure the error in the network after we forward-feed some \(\vec{x}\). Let's denote the output of the network at this initial stage for some \(\vec{x} \in \mathcal{X}\) to be \(f(\vec{x}) = \vec{a}^{(L)} = \hat{\vec{y}}\), remember that \(\hat{\vec{y}} \neq \vec{y}\). One way to evaluate the error in the network for some \(\vec{x}\) is as a function of weights and biases \((\mathcal{W}, \mathbf{b})\). We do this by calculating the squared difference between the \(\hat{\vec{y}}\) we get and the \(\vec{y}\) we expect. If we sum up this error and calculate the mean than we have an overall error estimate known as the <a href="https://en.wikipedia.org/wiki/Mean_squared_error">Mean Squared Error</a> (\(MSE\)).
@@ -130,16 +130,16 @@ Adding this to the Python class,
 </div>
 </div>
 
-<div id="outline-container-org1cb4ff2" class="outline-2">
-<h2 id="org1cb4ff2"><span class="section-number-2">2</span> Minimising the Error</h2>
+<div id="outline-container-org21dd12c" class="outline-2">
+<h2 id="org21dd12c"><span class="section-number-2">2</span> Minimising the Error</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Before our problem was to find a pair \((\mathcal{W}, \mathbf{b})\), that enables our network to perform well. We can now state this goal precisely: we need \((\mathcal{W}, \mathbf{b})\) such that \(MSE \approx 0\)<sup><a id="fnr.3" class="footref" href="#fn.3">3</a></sup>. We have boiled the problem down to minimising the function \(E\) through its parameters. Fortunately for us, this is no new problem in the world of mathematics.
 </p>
 </div>
 
-<div id="outline-container-org1f90833" class="outline-3">
-<h3 id="org1f90833"><span class="section-number-3">2.1</span> Negative Rate of Change</h3>
+<div id="outline-container-org12e4be7" class="outline-3">
+<h3 id="org12e4be7"><span class="section-number-3">2.1</span> Negative Rate of Change</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Imagine someone tells you to minimise some random function \(g(x)\) you know nothing about. The only thing you can ask is, for an \(x\) you pick, what is \(g(x)\)? Most people will start with some random \(x\) and nudge it in different directions to see which direction produces a smaller \(g(x)\) and hope that if they keep nudging \(x\) in that direction, \(g(x)\) will keep going down.
@@ -151,15 +151,15 @@ Russell and Norvig explain a similar algorithm in their book <i>Artificial Intel
 </div>
 </div>
 
-<div id="outline-container-orga6403f0" class="outline-3">
-<h3 id="orga6403f0"><span class="section-number-3">2.2</span> Descending the Derivative of a Parabola</h3>
+<div id="outline-container-org33f0a82" class="outline-3">
+<h3 id="org33f0a82"><span class="section-number-3">2.2</span> Descending the Derivative of a Parabola</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
-Take this function \(g(x) = x^2\), we know that the derivative is \(2x\) and \(2x = 0 \iff x = 0\) hence \(x = 0 \Rightarrow g(x) = 0\). We can do this because \(g\) has such a nice and simple definition. What if it did not have this nice and simple definition like our network \(f\). We could do what we just talked about, start at some random \(x_0\) and make small \(\eta\) sized nudges to it using the negative derivative: \(x_{n+1} = x_n - \eta g'(x_n)\) as shown in figure <a href="#orgd333c2d">2</a>. The small nudge to the initial \(x_0\) gives us \(x_1\) and then we calculate \(-\eta g'(x_1)\) to figure out the nudge we want to make to \(x_1\) and the series continues till we find some \(x_i\) for which \(g(x_i)\) is small enough.
+Take this function \(g(x) = x^2\), we know that the derivative is \(2x\) and \(2x = 0 \iff x = 0\) hence \(x = 0 \Rightarrow g(x) = 0\). We can do this because \(g\) has such a nice and simple definition. What if it did not have this nice and simple definition like our network \(f\). We could do what we just talked about, start at some random \(x_0\) and make small \(\eta\) sized nudges to it using the negative derivative: \(x_{n+1} = x_n - \eta g'(x_n)\) as shown in figure <a href="#orgdb689b3">2</a>. The small nudge to the initial \(x_0\) gives us \(x_1\) and then we calculate \(-\eta g'(x_1)\) to figure out the nudge we want to make to \(x_1\) and the series continues till we find some \(x_i\) for which \(g(x_i)\) is small enough.
 </p>
 
 
-<figure id="orgd333c2d">
+<figure id="orgdb689b3">
 <object type="image/svg+xml" data="./media/poly.svg" class="org-svg">
 Sorry, your browser does not support SVG.</object>
 
@@ -169,8 +169,8 @@ Sorry, your browser does not support SVG.</object>
 </div>
 </div>
 
-<div id="outline-container-org76d8c12" class="outline-2">
-<h2 id="org76d8c12"><span class="section-number-2">3</span> Gradient Descent</h2>
+<div id="outline-container-org1822db9" class="outline-2">
+<h2 id="org1822db9"><span class="section-number-2">3</span> Gradient Descent</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 If our function is a polynomial of more than two variables: \(\vec{p} = [p_1,p_2,...,p_n]\) then to figure out the nudges we use gradients instead of the derivatives. The gradient of some function \(h(\vec{p})\) is denoted as a vector of partial derivatives using the symbol nabla: \(\nabla\).
@@ -189,8 +189,8 @@ Depending upon how rusty your multi-variable calculus is, <a href="https://www.y
 </p>
 </div>
 
-<div id="outline-container-orgf638ac8" class="outline-3">
-<h3 id="orgf638ac8"><span class="section-number-3">3.1</span> Descending the Gradient of a Paraboloid</h3>
+<div id="outline-container-org4fa21c8" class="outline-3">
+<h3 id="org4fa21c8"><span class="section-number-3">3.1</span> Descending the Gradient of a Paraboloid</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 For \(\vec{p} = [a, b]\), take \(g(\vec{p}) = g(a, b) = a^2 + b^2\), imagine this to be our error function where \(a\) is analogous to \(\mathcal{W}\) and \(b\) is analogous to \(\mathbf{b}\). Let's write the gradient descent algorithm,
@@ -238,7 +238,7 @@ GD<span style="color: #51afef;">()</span>
 </div>
 
 <p>
-We know that \(g(a, b) = 0\) for \((a,b)=(0,0)\). As we can see in the printed output (also in figure <a href="#org2e4484c">3</a>), at each gradient descent step, the parameters \((a, b)\) get closer to \((0,0)\) alongside the error approaching \(0\). This means that we converge towards \((a,b)\) that minimise \(g(a,b)\) while descending on the gradient.
+We know that \(g(a, b) = 0\) for \((a,b)=(0,0)\). As we can see in the printed output (also in figure <a href="#orga84d450">3</a>), at each gradient descent step, the parameters \((a, b)\) get closer to \((0,0)\) alongside the error approaching \(0\). This means that we converge towards \((a,b)\) that minimise \(g(a,b)\) while descending on the gradient.
 </p>
 
 <div class="org-src-container">
@@ -253,7 +253,7 @@ Step:  6, <span style="color: #51afef;">(</span>a, b<span style="color: #51afef;
 </div>
 
 
-<figure id="org2e4484c">
+<figure id="orga84d450">
 <object type="image/svg+xml" data="./media/gradient.svg" class="org-svg">
 Sorry, your browser does not support SVG.</object>
 
@@ -263,8 +263,8 @@ Sorry, your browser does not support SVG.</object>
 </div>
 </div>
 
-<div id="outline-container-orgf99a256" class="outline-2">
-<h2 id="orgf99a256"><span class="section-number-2">4</span> Stochastic Gradient Descent</h2>
+<div id="outline-container-orgb9b05ec" class="outline-2">
+<h2 id="orgb9b05ec"><span class="section-number-2">4</span> Stochastic Gradient Descent</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 Instead of the simple gradient descent, we use the <i>Stochastic Gradient Descent</i> to find out the desired weights and biases. Stochastic gradient descent is just a small optimisation on the vanilla gradient descent. Let's first write down the gradient of the error function. Since \(E(\mathcal{W}, \mathbf{b}, \vec{x})\) is defined in terms of all weights \(W^{(l)} \in \mathcal{W}\) and biases \(\vec{b}^{(l)} \in \mathbf{b}\), its gradient vector will consist of the partial derivatives with respect to weights \(W^{(l)}\) and biases \(\vec{b}^{(l)}\).
@@ -355,8 +355,8 @@ Observe how the definition of the function <code>SGD(...)</code> is not much dif
 </div>
 </div>
 
-<div id="outline-container-orge2e959b" class="outline-2">
-<h2 id="orge2e959b"><span class="section-number-2">5</span> Propagate Backwards</h2>
+<div id="outline-container-orgddd8e93" class="outline-2">
+<h2 id="orgddd8e93"><span class="section-number-2">5</span> Propagate Backwards</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 We have arrived at the belly of the beast. Gradient descent depends on our ability to calculate the gradient of the error function \(E\)<sup><a id="fnr.5" class="footref" href="#fn.5">5</a></sup>. Consequently, we can only calculate the gradient if we can calculate the partial derivatives of \(E\) with respect to some \(W^{(l)} \in \mathcal{W}\) and \(\vec{b}^{(l)} \in \mathbf{b}\). Let's remind ourselves of the \(\nabla E\).
@@ -374,7 +374,7 @@ Backpropagation is the algorithm we use to calculate the above gradient. We'll d
 </p>
 
 
-<figure id="org4233352">
+<figure id="org484096c">
 <object type="image/svg+xml" data="./media/mlp-bin.svg" class="org-svg" width="60%">
 Sorry, your browser does not support SVG.</object>
 
@@ -382,7 +382,7 @@ Sorry, your browser does not support SVG.</object>
 </figure>
 
 <p>
-For the network in figure <a href="#org4233352">4</a>, we have the following weights, biases and activations:
+For the network in figure <a href="#org484096c">4</a>, we have the following weights, biases and activations:
 </p>
 
 \begin{align*}
@@ -409,8 +409,8 @@ We can also write out the gradient \(\nabla E\),
 \end{align*}
 </div>
 
-<div id="outline-container-org35030f8" class="outline-3">
-<h3 id="org35030f8"><span class="section-number-3">5.1</span> Chain Rule and Composite Functions</h3>
+<div id="outline-container-orgdc4fbf9" class="outline-3">
+<h3 id="orgdc4fbf9"><span class="section-number-3">5.1</span> Chain Rule and Composite Functions</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 Let's start with the \(\frac{\partial E}{\partial W^{(L)}}\).
@@ -553,8 +553,8 @@ We now generalise (correcting dimensions) through induction, for all \(l = L - i
 </div>
 </div>
 
-<div id="outline-container-org5f06859" class="outline-3">
-<h3 id="org5f06859"><span class="section-number-3">5.2</span> Backpropagation</h3>
+<div id="outline-container-org292fb0d" class="outline-3">
+<h3 id="org292fb0d"><span class="section-number-3">5.2</span> Backpropagation</h3>
 <div class="outline-text-3" id="text-5-2">
 <p>
 The only thing keeping us from running the implementation of the stochastic gradient decent was the lack of a way to calculate the gradient of the error function \(E\). That is no longer true! We have a plan of attack. We do a forward pass using some \(\vec{x} \in \mathcal{B}_i\) and then we use equations (1), (2) and (3) to calculate the layer \(L\) partial derivative in the gradient. From there we use the \(\delta^{(L)}\) to recursively keep calculating \(\delta^{(l)}\) to be used in equations (4), (5) and (6) in order to calculate the rest of the partial derivatives backwards. This <i>backwards pass</i> is why we call this algorithm <i>Backpropagation</i>. Let's implement backpropagation for \(\vec{x} \in \mathcal{B}_i\).
@@ -591,8 +591,8 @@ The only thing keeping us from running the implementation of the stochastic grad
 </div>
 </div>
 
-<div id="outline-container-orgcf12f97" class="outline-2">
-<h2 id="orgcf12f97"><span class="section-number-2">6</span> Wrapping Up the Python Class</h2>
+<div id="outline-container-org767c25d" class="outline-2">
+<h2 id="org767c25d"><span class="section-number-2">6</span> Wrapping Up the Python Class</h2>
 <div class="outline-text-2" id="text-6">
 <p>
 We are done with the mathematics of the Multi-layer Perceptron. However, we still need to add a few functions to our Python class. In order to train the network, we run multiple round of the stochastic gradient decent using differently permuted <code>X, y</code> each time to produce the batches. The <code>Network</code> class figures out the number of <code>self.SGD(...)</code> calls by the variable <code>epochs</code> passed to the <code>__init__</code> definition. This function is usually named something along the lines of <code>train(...)</code>, but we'll make our network <a href="https://soundcloud.com/rana-m-sholkamy/el-choclo">tango</a> instead.
@@ -634,19 +634,19 @@ Finally, say we trained the network for a while and have a pretty good pair of \
 </div>
 </div>
 
-<div id="outline-container-org5a60bce" class="outline-2">
-<h2 id="org5a60bce"><span class="section-number-2">7</span> Testing Code and Assumptions</h2>
+<div id="outline-container-org9f0977b" class="outline-2">
+<h2 id="org9f0977b"><span class="section-number-2">7</span> Testing Code and Assumptions</h2>
 <div class="outline-text-2" id="text-7">
 <p>
-You can find the complete <code>Network</code> class we wrote in the file: <code>network.py</code> at <a href="https://github.com/simurgh9/net">Github</a> or <a href="../src/network.py">here</a>.
+You can find the complete <code>Network</code> class we wrote in the file: <code>network.py</code> at <a href="https://github.com/simurgh9/net/blob/master/src/network.py">Github</a> or <a href="https://raw.githubusercontent.com/simurgh9/net/master/src/network.py">here</a>.
 </p>
 </div>
 
-<div id="outline-container-orgacf964c" class="outline-3">
-<h3 id="orgacf964c"><span class="section-number-3">7.1</span> Classifying Binary Numbers per Parity</h3>
+<div id="outline-container-org1be25b2" class="outline-3">
+<h3 id="org1be25b2"><span class="section-number-3">7.1</span> Classifying Binary Numbers per Parity</h3>
 <div class="outline-text-3" id="text-7-1">
 <p>
-Let's first test <code>network.py</code> by <a href="../src/parity.py">building and training</a> the network in figure <a href="#org4233352">4</a>. We produce the <a href="https://en.wikipedia.org/wiki/Training,_validation,_and_test_sets">training and testing examples</a> (skipping validation). The training examples are what we pass as <code>X, y</code>. The testing examples are the ones we use to test the accuracy of a trained network. We don't train the network on this set for the sake of an unbiased measure of performance.
+Let's first test <code>network.py</code> by <a href="https://github.com/simurgh9/net/blob/master/src/parity.py">building and training</a> the network in figure <a href="#org484096c">4</a>. We produce the <a href="https://en.wikipedia.org/wiki/Training,_validation,_and_test_sets">training and testing examples</a> (skipping validation). The training examples are what we pass as <code>X, y</code>. The testing examples are the ones we use to test the accuracy of a trained network. We don't train the network on this set for the sake of an unbiased measure of performance.
 </p>
 
 <p>
@@ -667,12 +667,12 @@ Let's first test <code>network.py</code> by <a href="../src/parity.py">building 
 </div>
 
 <p>
-Since we have the data, we build and train the figure <a href="#org4233352">4</a> network.
+Since we have the data, we build and train the figure <a href="#org484096c">4</a> network.
 </p>
 
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 11: </span>Figure <a href="#org4233352">4</a> network</label><pre class="src src-python">np.random.seed<span style="color: #51afef;">(</span>0<span style="color: #51afef;">)</span>
+<label class="org-src-name"><span class="listing-number">Listing 11: </span>Figure <a href="#org484096c">4</a> network</label><pre class="src src-python">np.random.seed<span style="color: #51afef;">(</span>0<span style="color: #51afef;">)</span>
 <span style="color: #dcaeea;">net</span> = Network<span style="color: #51afef;">(</span>X, y, structure=<span style="color: #c678dd;">[</span>10, 3, 2<span style="color: #c678dd;">]</span>, epochs=1000, bt_size=8, eta=0.3<span style="color: #51afef;">)</span>
 
 <span style="color: #5B6268;"># </span><span style="color: #5B6268;">train</span>
@@ -690,7 +690,7 @@ We get the output:
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 12: </span>Figure <a href="#org4233352">4</a> network training output and accuracy</label><pre class="src src-shell">* Epoch:    0, Error: 0.48236
+<label class="org-src-name"><span class="listing-number">Listing 12: </span>Figure <a href="#org484096c">4</a> network training output and accuracy</label><pre class="src src-shell">* Epoch:    0, Error: 0.48236
 * Epoch:    1, Error: 0.3234
 * Epoch:    2, Error: 0.16235
 * Epoch:    3, Error: 0.075001
@@ -712,24 +712,24 @@ Usually if you see an accuracy of 1, that should make you suspicious of having <
 </p>
 
 
-<figure id="org75a4c8f">
+<figure id="org8de3301">
 <object type="image/svg+xml" data="./media/matrix-plot.svg" class="org-svg">
 Sorry, your browser does not support SVG.</object>
 
-<figcaption><span class="figure-number">Figure 5: </span>Weights \(\mathcal{W}\) of the network in figure <a href="#org4233352">4</a></figcaption>
+<figcaption><span class="figure-number">Figure 5: </span>Weights \(\mathcal{W}\) of the network in figure <a href="#org484096c">4</a></figcaption>
 </figure>
 
 <p>
-Looking at figure <a href="#org75a4c8f">5</a> and sure enough, training assigned the heaviest weight values to the least significant bit. This pattern shows that sometimes by looking at the weights, even humans can learn about new patterns or simply perform dimensionality reduction of the input \(\vec{x}\) (feature selection). 
+Looking at figure <a href="#org8de3301">5</a> and sure enough, training assigned the heaviest weight values to the least significant bit. This pattern shows that sometimes by looking at the weights, even humans can learn about new patterns or simply perform dimensionality reduction of the input \(\vec{x}\) (feature selection). 
 </p>
 </div>
 </div>
 
-<div id="outline-container-orgfe279f0" class="outline-3">
-<h3 id="orgfe279f0"><span class="section-number-3">7.2</span> Classifying Handwritten Digits</h3>
+<div id="outline-container-org06d688e" class="outline-3">
+<h3 id="org06d688e"><span class="section-number-3">7.2</span> Classifying Handwritten Digits</h3>
 <div class="outline-text-3" id="text-7-2">
 <p>
-The benchmark problem that all neural network tutorials solve is the <a href="../src/main.py">classification of the handwritten digits</a>. At the time of writing this article, the data is available for free at <a href="http://yann.lecun.com/exdb/mnist">http://yann.lecun.com/exdb/mnist</a>. If you are anything like me, you'll open that link and say to yourself, "Okay, wow, now what?". To deal with that feeling, I wrote a little downloader <a href="../src/mnsit_handwritten_digits.py">class</a> in Python that will download, read and reshape the data from that site into the format we want.
+The benchmark problem that all neural network tutorials solve is the <a href="https://github.com/simurgh9/net/blob/master/src/main.py">classification of the handwritten digits</a>. At the time of writing this article, the data is available for free at <a href="http://yann.lecun.com/exdb/mnist">http://yann.lecun.com/exdb/mnist</a>. If you are anything like me, you'll open that link and say to yourself, "Okay, wow, now what?". To deal with that feeling, I wrote a little downloader <a href="https://github.com/simurgh9/net/blob/master/src/mnsit_handwritten_digits.py">class</a> in Python that will download, read and reshape the data from that site into the format we want.
 </p>
 
 <div class="org-src-container">
@@ -745,11 +745,11 @@ mn.plot_image<span style="color: #51afef;">(</span>999, source=<span style="colo
 </div>
 
 <p>
-You'll need <a href="https://matplotlib.org/">Matplotlib</a> for plotting. The line <code>mn.plot_image(999, source='training')</code> will plot the \(999^{th}\) image (figure <a href="#org0c13f34">6</a>) in the training set.
+You'll need <a href="https://matplotlib.org/">Matplotlib</a> for plotting. The line <code>mn.plot_image(999, source='training')</code> will plot the \(999^{th}\) image (figure <a href="#org69d78d0">6</a>) in the training set.
 </p>
 
 
-<figure id="org0c13f34">
+<figure id="org69d78d0">
 <object type="image/svg+xml" data="./media/mnsit-six.svg" class="org-svg">
 Sorry, your browser does not support SVG.</object>
 
@@ -812,14 +812,14 @@ Network Accuracy: 0.9259
 
 
 <p>
-The training time here will be longer depending on your machine. With the network above, I was able to achieve an accuracy of \(93\%\). You may load my converged set of \((\mathcal{W}, \mathbf{b})\) by uncommenting the line after the network instantiation. Make sure you give the correct path to the <a href="../src/weights_biases.npy">file</a> <code>weights_biases.npy</code> (and you should probably comment <code>net.tango()</code>).
+The training time here will be longer depending on your machine. With the network above, I was able to achieve an accuracy of \(93\%\). You may load my converged set of \((\mathcal{W}, \mathbf{b})\) by uncommenting the line after the network instantiation. Make sure you give the correct path to the <a href="https://github.com/simurgh9/net/blob/master/src/weights_biases.npy">file</a> <code>weights_biases.npy</code> (and you should probably comment <code>net.tango()</code>).
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgfa12634" class="outline-2">
-<h2 id="orgfa12634"><span class="section-number-2">8</span> Other Resources</h2>
+<div id="outline-container-org511ed38" class="outline-2">
+<h2 id="org511ed38"><span class="section-number-2">8</span> Other Resources</h2>
 <div class="outline-text-2" id="text-8">
 <p>
 Outside of the university classes, here are the resources I used to revise some of the relevant material.
@@ -964,7 +964,7 @@ By \(\odot\) we mean element wise multiplication. This is also known as the <i>H
 </div></div>
 <div id="postamble" class="status">
 <p class="author">Author: Tashfeen, Ahmad</p>
-<p class="date">Created: 2020-07-07 Tue 02:07</p>
+<p class="date">Created: 2020-07-07 Tue 02:37</p>
 </div>
 </body>
 </html>
