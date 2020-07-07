@@ -5,7 +5,7 @@ This repository holds the source code and manuscripts of the following article:
 1. [Part One](https://tashfeen.org/net/)
 2. [Part Two](https://tashfeen.org/net/two.html)
     
-In the article we talk about the mathematics and code (using only vanilla Python & Numpy) of a Multi-layer Perceptron.
+In the article, we talk about the mathematics and code (using only vanilla Python & Numpy) of a Multi-layer Perceptron.
 
 # License
 
