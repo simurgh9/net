@@ -1,0 +1,238 @@
+\documentclass{homework}
+\author{Tashfeen, Ahmad}
+\class{Personal Project}
+\date{\today}
+\title{Tashfeen's Notes on Backpropagation}
+\address{North Warren Avenue}
+
+\graphicspath{{media/}}
+\lstset{language=python}
+
+% https://tex.stackexchange.com/questions/204291/bibtex-latex-compiling
+% \renewcommand{\d}[1][d]{\operatorname{#1}}
+% \renewcommand{\vec}[1]{\mathbf{#1}}
+% \newcommand{\derivative}[2][x]{\frac{\d #2}{\d #1}}
+
+\begin{document} \maketitle
+
+\section{Chain Rule}
+
+At the heart of Backpropogation is a simple rule of calculus that helps us take the derivatives of composite functions known as \textit{the chain rule}.
+
+\[
+  \zeta(x) = f(g(x)) \quad \text{ then according to the chain rule: } \quad
+  \derivative{\zeta} = \derivative[g]{f} \times \derivative{g}
+\]
+
+It is important to note there that $\derivative{f}$ denotes the total derivative of $f$ with respect to $x$ and not the partial derivative which is denoted as $\frac{\p f}{\p x}$. The general idea behind applying chain rule is that you start with the outer most function and take it's derivative while treating all inner functions as variables and recursively repeat this for the inner functions. Here is an intuitive way to think about it \cite{3354744},
+
+\[
+  \begin{array}{c}
+    \text{The change in }\zeta \text{ caused by} \\
+    \text{a small unit change in }x
+  \end{array}=\begin{array}{c}
+    \text{The change in }f\text{ caused by} \\
+    \text{a small unit change in }g
+  \end{array}\times\begin{array}{c}
+    \text{The change in }g\text{ caused by} \\
+    \text{a small unit change in }x.
+  \end{array}
+\]
+
+Let's look at an example where $\zeta(x) = \ln^2(x)$, we can write this as $\zeta(x) = f(x) = g(x)^2$ where $g(x) = \ln(x)$. Here $f$ is the outer most function and then we have $g$ as the inner function.
+\[
+  \derivative{\zeta} = \derivative[g]{f} \times \derivative{g} = 2g(x)\times \frac{1}{x} = \frac{2\ln(x)}{x}
+\]
+
+For a slightly more involved example let $\zeta(x) = (z(x))^2$ where $z(x) = x + f(x), f(x) = \ln(g(x))$ and $g(x) = \frac{1}{2}x^2$ then $\zeta'$ or $\frac{d\zeta}{dx}$ is defined as,
+
+\begin{align*}
+  \zeta'(x)
+  & = \derivative[z]{\zeta} \times \derivative{z}
+    = 2z(x) \times z'(x) \\
+  & = \derivative[z]{\zeta} \Bigg(\derivative{x} + \derivative{f}\Bigg)
+    = 2z(x) \times (1 + f'(x))
+      && \text{Substituting in place of } \derivative{z} \\
+  & = \derivative[z]{\zeta} \Bigg(\derivative{x} + \Big(\derivative[g]{f} \derivative{g} \Big)\Bigg)
+    = 2z(x)\Bigg(1 + \Big(\frac{1}{g(x)}g'(x)\Big)\Bigg)
+      && \text{Substituting in place of } \derivative{f} \\
+  & = \derivative[z]{\zeta} \Bigg(\derivative{x} + \Big(\derivative[g]{f} \derivative{g} \Big)\Bigg)
+    = 2z(x)\Bigg(1 + \Big(\frac{1}{g(x)}x\Big)\Bigg)
+      && \text{Substituting in place of } \derivative{g} \\
+\end{align*}
+
+\section{Gradient \& Gradient Decent}
+
+Most people are familiar with the slope of a linear function, e. g., for $y = f(x) = mx +b$ we know that the rate of change or in other words the slope is $m$. Let $f(x) = \frac{3}{2}x - 3$ and suppose the problem is to find such a value of $x$ such that $f(x) = 0$. Obviously in this case we can see that for $x=2$ we have $f(x) = 0$. For the sake of illustration though pretend this was not such a simple problem that we could just observe the minimising $x$ value. The next step would be to set $f$ equal to zero and solve for $x$ but what if we did not have an easy way to write down $f$? What if we could only compute the numerical value of $f(x)$ for a given $x$ using some algorithm. How could we find a value of $x$ for which $f(x) = 0$?
+
+The first question we need to answer is that in how many directions can we nudge the value of $x$ and observe the corresponding value of $f(x)$. Since the notion of direction becomes inconceivable in higher dimensions, let's pose this question as, how many ways can $x$ be changed? Fortunately, for a linear function there are only two ways or two directions we can nudge $x$ to, i. e., positive and negative.
+
+Can we be smart about picking if we want to nudge $x$ in the positive of negative direction? Yes, we can if we know how $f(x)$ changes with respect to a change in $x$. If the slop is positive, we should nudge $x$ in the negative direction to reduce $f(x)$ to 0. Similarly, if the slope is negative, then we should nudge $x$ in positive direction. There seems to be an informal generalisation here. To reduce a function $f(x)$ from some starting point $x_0$, we should move in the opposite direction of the positive rate of change.
+
+% \fig[0.45]{pos_lin_slope.png, neg_lin_slope.png}{Descending the Slope}{slope_decent}
+
+When we move from a linear to a polynomial functions say $f(x) = x^2$, the idea of moving in the opposite direction of the positive rate of change remains the same. However, now instead of slops, we have derivatives. We know that $\derivative{f} = 2x$. Therefore, if we start at $x_0=10$ or any $x_0 > 0$, we should nudge $x_0$ in the negative direction since $f'(10) > 0$, is positive. Similarly if we start at any $x_0 < 0$, we should nudge $x_0$ in the positive direction.
+
+% \fig[0.7]{poly.png}{Descent per Derivative}{derivative_decent}
+
+At this point we can sketch out an algorithm to minimise a function $f(x)$ by adjusting $x$ according to it's rate of change.
+
+\begin{enumerate}
+  \item Pick a starting point, call it $x_0$.
+  \item Pick the next point $x_1$ according to the rate of change at $f(x_0)$.
+  \item If the difference between $f(x_1)$ and $f(x_0)$ is under some desired value $\ep$ stop. Else, repeat step 2 with the new $x_1$.
+\end{enumerate}
+
+What if the function in question was defined in terms of multiple variables, as in $f: \bR^n \ra \bR^n$ where $n > 1$. Now we figure out the positive rate of change (after slopes and derivatives) using the gradient of the multi-variable function. A gradient of a function $f(p_0, p_1, p_2, \hdots, p_n)$ is denoted as $\nabla f(p_0, p_1, p_2, \hdots, p_n)$ and is defined in terms of the partial derivatives,
+\[
+  \nabla f(p_0, p_1, p_2, \hdots, p_n)
+  = \nabla f(\vec{p})
+  = \Bigg[\frac{\p f(\vec{p})}{\p x_0}, \frac{\p f(\vec{p})}{\p x_1}, \frac{\p f(\vec{p})}{\p x_2}, \hdots, \frac{\p f(\vec{p})}{\p x_n}\Bigg]
+\]
+
+The vector $\nabla f(\vec{p})$ gives us the nudges we can make in the direction of the steepest ascent. Similar to our idea from before, we need to step in the opposite direction of the gradient to find the $\vec{p} = [p_0, p_1, p_2, \hdots, p_n]$ that minimises $f$. Assume for $f: \bR^2 \ra \bR^2$, we have $f(x, y) = x^2 + y^2$. Calculating the gradient we get,
+\[
+  \nabla f(x, y) = \Bigg[\frac{\p f(x,y)}{\p x}, \frac{\p f(x,y)}{\p y}\Bigg] = [2x, 2y]
+\]
+
+As seen in the gradient above, for $(x, y) = (0, 0)$ the function $f$ is minimised. In other words, there is a global minima at $(0, 0)$. But in order to keep our method general for even the more complicated functions, we repeat the same algorithm we sketched with the polynomial functions. We can now rewrite the algorithm in terms of the gradient; this final algorithm is called the \textit{gradient decent}.
+
+\begin{enumerate}
+  \item Pick a random $\vec{p}_{n=0}$.
+  \item Let $\vec{p}_{n+1} = \vec{p}_{n} - \eta \nabla f(\vec{p}_n)$.
+  \item If $||f(\vec{p}_{n+1}) - f(\vec{p}_{n})|| < \ep$ then stop.
+  \item Repeat step 2 with $\vec{p}_{n+1}$.
+\end{enumerate}
+
+Here $\ep$ is the error we are okay with and $\eta$ is the size of the nudge we make. $\eta$ is also known as the learning rate since the bigger the nudge, the faster we learn.
+
+Following is the graph for gradient decent on $f(x, y) = x^2 + y^2$ and $\nabla f(x, y) = [2x, 2y]$.
+
+% \fig[0.65]{gradient_descent.png}{Gradient Descent}{gradient_descent}
+
+\section{Backpropagation with Gradient Descent \& Chain Rule}
+
+The aim of learning in a Multi-layer Perceptron a. k. a. the simplest Neural Network is to find a set of weight matrices $\mathcal W$ and bias vectors $\mathbf b$ which minimise the cost/loss function. We use the quadratic cost function defined as,
+\[
+  C(\mathcal W, \mathbf b) = \frac{1}{n} \sum_x(y-a^L)^2
+\]
+
+Here $a^{(L)}$ is the squishified output of the network calculated using $(\mathcal W, \mathbf b)$ when the example $x$ is fed and $y$ is the expected output. We are summing this expression over all training examples which gives us the cost of the network.
+
+Here are other forward feeding equations (might add more about these later),
+
+\begin{align*}
+  a^{(l)} & = \sigma(z^{(l)}) \quad \text{or} \quad \operatorname{relu}(z^{(l)}) \\
+  z^{(l)} & = w^{(l)} a^{(l-1)}+b^{(l)} && \text{where } w^{(l)} \in \mathcal W, b^{(l)} \in \mathbf b 
+\end{align*}
+
+Here is where we need to be able to calculate the gradient of cost function since we want to find some $(\mathcal W, \mathbf b)$ which minimise the cost of the network. With the gradient, we'll be able to employ the (stochastic) gradient decent.
+
+\[
+  \nabla C(\mathcal W, \mathbf b)
+  =
+  \Bigg[\frac{\p C}{\p w^{(L)}}, \frac{\p C}{\p b^{(L)}}, \frac{\p C}{\p w^{(L-1)}}, \frac{\p C}{\p b^{(L-1)}} \hdots, \frac{\p C}{\p w^{(1)}}, \frac{\p C}{\p b^{(1)}}\Bigg]
+\]
+
+To figure out $\frac{\p C}{\p w^{(L)}}$ we shall employ the chain rule,
+\begin{align*}
+  \frac{\p C}{\p w^{(L)}}
+  & = \frac{1}{n} \sum_x \Bigg( \frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \frac{\p (y-a^{(L)})}{\p w^{(L)}} \Bigg)
+  && \text{Chain Rule } \frac{\p f(g(x))}{\p (x)} = \frac{\p f}{\p g}\frac{\p g}{\p x} \\ 
+  & = \frac{1}{n} \sum_x \Bigg( \frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \Big(\frac{\p (y)}{\p w^{(L)}} - \frac{\p (a^{(L)})}{\p w^{(L)}} \Big)\Bigg)
+  && \text{Derivative Property } \frac{\p (f \pm g)}{\p x} = \frac{\p (f)}{\p x} \pm \frac{\p (g)}{\p x} \\
+  & = \frac{1}{n} \sum_x \Bigg( \frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \Big(0 - \frac{\p (a^{(L)})}{\p w^{(L)}} \Big)\Bigg)
+  && \frac{\p (y)}{\p w^{(L)}} = 0, \text{ since } y \text{ does not change with respect to } w^{(L)} \\
+  & = \frac{1}{n} \sum_x \Bigg( \frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \Big(- \frac{\p (a^{(L)})}{\p w^{(L)}} \Big)\Bigg) \\
+  & = \frac{1}{n} \sum_x \Bigg( - \frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \frac{\p (a^{(L)})}{\p w^{(L)}} \Bigg)
+  && \text{Brought the negative sign to the front of differentials} \\
+  & = \frac{1}{n} \sum_x \Bigg( -\frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \Big(\frac{\p (\sigma(z^{(L)}))}{\p z^{(L)}} \frac{\p z^{(L)}}{\p w^{(L)}} \Big)\Bigg)
+  && \text{Chain Rule} \\
+  & = \frac{1}{n} \sum_x \Bigg( -\frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \frac{\p (\sigma(z^{(L)}))}{\p z^{(L)}} \frac{\p z^{(L)}}{\p w^{(L)}} \Bigg) \\
+  \frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})}
+  & = 2(y-a^{(L)})
+  && \text{Evaluating differentials} \\
+  \frac{\p (\sigma(z^{(L)}))}{\p z^{(L)}}
+  & = \sigma'(z^{(L)})
+  && \text{Derivative of the sigmoid } \sigma'(x) = \sigma(x)(1-\sigma(x)) \\
+  \frac{\p z^{(L)}}{\p w^{(L)}}
+  & = \frac{\p (w^{(L)} a^{l-1} + b^{(L)})}{\p w^{(L)}} = a^{l-1}
+\end{align*}
+
+Therefore,
+\[
+  \frac{\p C}{\p w^{(L)}} =
+  \frac{1}{n} \sum_x \Bigg( -\frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \frac{\p (\sigma(z^{(L)}))}{\p z^{(L)}} \frac{\p z^{(L)}}{\p w^{(L)}} \Bigg)
+  = \frac{1}{n} \sum_x \big(-2(y-a^{(L)})\sigma'(z^{(L)})a^{L-1} \big)
+\]
+
+Similarly,
+
+\[
+  \frac{\p (w^{(L)} a^{l-1} + b^{(L)})}{\p b^{(L)}} = 1 \Ra
+  \frac{\p C}{\p b^{(L)}} =
+  \frac{1}{n} \sum_x \Bigg( -\frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \frac{\p (\sigma(z^{(L)}))}{\p z^{(L)}} \frac{\p z^{(L)}}{\p b^{(L)}} \Bigg)
+  = \frac{1}{n} \sum_x \big(-2(y-a^{(L)})\sigma'(z^{(L)})(1)\big)
+\]
+
+If you are reading other literature on Neural Networks you may also come by  $\delta^{(L)}$ known as the \textit{error in layer $l$}. In our calculations above these can be identified like this,
+
+\[
+  \frac{1}{n} \sum_x \Bigg( \underbrace{-\frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \frac{\p (\sigma(z^{(L)}))}{\p z^{(L)}}}_{\delta^{(L)}} \frac{\p z^{(L)}}{\p w^{(L)}} \Bigg)
+  =
+  \frac{1}{n} \sum_x \big(\underbrace{-2(y-a^{(L)})\sigma'(z^{(L)})}_{\delta^{(L)}}a^{l-1}\big)
+\]
+
+But what about $\frac{\p C}{\p w^{(l)}}$, where $l < L$, e. g., $l = L-1$. We just keep applying the chain rule since,
+
+\[
+  a^{(L)} = \sigma(w^{(L)}\underbrace{a^{(L-1)}}_{\sigma(z^{(L-1)})}+b^{(L)})\iff a^{(L)} = \sigma(w^{(L)}\sigma(z^{L-1})+b^{(L)})
+  =\sigma(w^{(L)}\sigma(w^{(L-1)}a^{(L-2)} + b^{(L-1)})+b^{(L)})
+\]
+
+\begin{align*}
+  \frac{\p C}{\p w^{(L-1)}}
+  & = \frac{1}{n} \sum_x \Bigg( -\frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \frac{\p (\sigma(z^{(L)}))}{\p z^{(L)}} \frac{\p z^{(L)}}{\p w^{(L)}} \Bigg) \\
+  & = \frac{1}{n} \sum_x \Bigg( -\frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \frac{\p (\sigma(z^{(L)}))}{\p z^{(L)}} \frac{\p z^{(L)}}{\p a^{(L-1)}} \frac{\p a^{(L-1)}}{\p z^{(L-1)}}\frac{\p z^{(L-1)}}{\p w^{(L-1)}} \Bigg) \\
+  & = \frac{1}{n} \sum_x \Bigg( \underbrace{\delta^{(L)} \frac{\p z^{(L)}}{\p a^{(L-1)}} \frac{\p a^{(L-1)}}{\p z^{(L-1)}}}_{\delta^{(L-1)}}\frac{\p z^{(L-1)}}{\p w^{(L-1)}} \Bigg) \\
+  & = \frac{1}{n} \sum_x \Bigg( \underbrace{\delta^{(L)} w^{(L)} \sigma'(z^{(L-1)})}_{\delta^{(L-1)}}a^{(L-2)} \Bigg) \\
+  & = \frac{1}{n} \sum_x \Bigg( \delta^{(L-1)}\frac{\p z^{(L-1)}}{\p w^{(L-1)}} \Bigg) \\
+\end{align*}
+
+Therefore,
+
+\begin{align*}
+  \frac{\p C}{\p w^{(L-i)}}
+  & = \frac{1}{n} \sum_x \Bigg(
+    \underbrace{\underbrace{\underbrace{\underbrace{-\frac{\p (y-a^{(L)})^2}{\p (y-a^{(L)})} \frac{\p a^{(L)}}{\p z^{(L)}}}_{\delta^{(L)}}
+    \frac{\p z^{(L)}}{\p a^{(L-1)}} \frac{\p a^{(L-1)}}{\p z^{(L-1)}}}_{\delta^{(L-1)}}
+    \frac{\p z^{(L-1)}}{\p a^{(L-2)}}\frac{\p a^{(L-2)}}{\p z^{(L-2)}}}_{\delta^{(L-2)}}
+    \hdots
+    \frac{\p z^{(L-i+1)}}{\p a^{(L-i)}}\frac{\p a^{(L-i)}}{\p z^{(L-i)}}}_{\delta^{(L-i)}}
+    \frac{\p z^{(L-i)}}{\p w^{(L-i)}} \Bigg)\\
+    & = \frac{1}{n} \sum_x \Bigg( \delta^{(L-i)} \frac{\p z^{(L-i)}}{\p w^{(L-i)}} \Bigg) \\
+\end{align*}
+
+Where we write $\delta^{(L-i)}$ succinctly as,
+
+\[
+  \delta^{(L-i)} = \delta^{(L-i+1)}\frac{\p z^{(L-i+1)}}{\p a^{(L-i)}}\frac{\p a^{(L-i)}}{\p z^{(L-i)}}
+  = \delta^{(L-i+1)}w^{(L-i+1)}\sigma'(z^{(L-i)})
+\]
+
+Let $l = L-i, i \in \bN$
+
+\[
+  \delta^{(l)} = \delta^{(l+1)}w^{(l+1)}\sigma'(z^{(l)})
+\]
+
+For the biases,
+
+\[
+  \frac{\p C}{\p b^{(L-i)}} = \frac{1}{n} \sum_x \Bigg( \delta^{(L-i)} \frac{\p z^{(L-i)}}{\p b^{(L-i)}} \Bigg)
+  = \frac{1}{n} \sum_x \delta^{(L-i)}
+\]
+
+Since $\frac{\p z^{(L-i)}}{\p b^{(L-i)}} = 1$.
+
+\end{document}
