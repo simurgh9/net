@@ -21,7 +21,7 @@ This is the second part of the article[fn:contact] Neural Networks in which we d
 
 * Error in the Network
 
-  We denote our sample examples passed to the ~Network~ as ~X, y~ Numpy arrays with sets $\mathcal{X} \subset \mathbb{R}^n$ and $\mathbf{y}\subset \{0, 1\}^m$ (one-hot encodings), $n,m \in \mathbb{N}$. With random $(\mathcal{W}, \mathbf{b})$, we have no reason to expect the network to behave in any reasonable way. Right now, it is as good as a guessing machine. How good is a guessing machine though? We need a way to measure the error in the network after we forward-feed some $\vec{x}$. Let's denote the output of the network at this initial stage for some $\vec{x} \in \mathcal{X}$ to be $f(\vec{x}) = \vec{a}^{(L)} = \hat{\vec{y}}$, remember that $\hat{\vec{y}} \neq \vec{y}$. One way to evaluate the error in the network for some $\vec{x}$ is as a function of weights and biases $(\mathcal{W}, \mathbf{b})$. We do this by calculating the squared difference between the $\hat{\vec{y}}$ we get and the $\vec{y}$ we expect. If we sum up this error and calculate the mean than we have an overall error estimate known as the [[https://en.wikipedia.org/wiki/Mean_squared_error][Mean Squared Error]] ($MSE$).
+  We denote our sample examples passed to the ~Network~ as ~X, y~ Numpy arrays with sets $\mathcal{X} \subset \mathbb{R}^n$ and $\mathbf{y}\subset \{0, 1\}^m$ (one-hot encodings), $n,m \in \mathbb{N}$. With random $(\mathcal{W}, \mathbf{b})$, we have no reason to expect the network to behave in any reasonable way. Right now, it is as good as a guessing machine. How good is a guessing machine though? We need a way to measure the error in the network after we forward-feed some $\vec{x}$. Let's denote the output of the network at this initial stage for some $\vec{x} \in \mathcal{X}$ to be $f(\vec{x}) = \vec{a}^{(L)} = \hat{\vec{y}}$, remember that $\hat{\vec{y}} \neq \vec{y}$. One way to evaluate the error in the network for some $\vec{x}$ is as a function of weights and biases $(\mathcal{W}, \mathbf{b})$. We do this by calculating the squared difference between the $\hat{\vec{y}}$ we get and the $\vec{y}$ we expect. If we sum up this error and calculate the mean then we have an overall error estimate known as the [[https://en.wikipedia.org/wiki/Mean_squared_error][Mean Squared Error]] ($MSE$).
 
   \begin{align*}
     E = E(\mathcal{W}, \mathbf{b}, \vec{x})
@@ -43,16 +43,16 @@ Adding this to the Python class,
 
 * Minimising the Error
 
-Before our problem was to find a pair $(\mathcal{W}, \mathbf{b})$, that enables our network to perform well. We can now state this goal precisely: we need $(\mathcal{W}, \mathbf{b})$ such that $MSE \approx 0$[fn:1]. We have boiled the problem down to minimising the function $E$ through its parameters. Fortunately for us, this is no new problem in the world of mathematics.
+Before our problem was to find a pair $(\mathcal{W}, \mathbf{b})$ that enables our network to perform well. We can now state this goal precisely: we need $(\mathcal{W}, \mathbf{b})$ such that $MSE \approx 0$[fn:1]. We have boiled the problem down to minimising the function $E$ through its parameters. Fortunately for us, this is no new problem in the world of mathematics.
 
 ** Negative Rate of Change
    Imagine someone tells you to minimise some random function $g(x)$ you know nothing about. The only thing you can ask is, for an $x$ you pick, what is $g(x)$? Most people will start with some random $x$ and nudge it in different directions to see which direction produces a smaller $g(x)$ and hope that if they keep nudging $x$ in that direction, $g(x)$ will keep going down.
 
-   Russell and Norvig explain a similar algorithm in their book /Artificial Intelligence--A Modern Approach/ with the statement, "trying to find the top of Mount Everest in a thick fog while suffering from amnesia" [[cite:russel2010pearson]]. Except, in our case, we are trying to find the base-camp in a thick fog with amnesia, i. e., going down. We can't see too far, we don't remember where we came from but we have a sense of downwards direction. We just know that if we keep stepping (making nudges) in the downwards direction, we shall eventually reach a local minimum. This idea is the very key to finding the correct weights and biases. Calculus students know this rate of change as the derivative and most algebra students know it as the slope. We never get into algorithms to minimise the simple derivatives or slopes because we can just set them equal to zero and solve. But, in order to illustrate the algorithm, let's consider a simple polynomial as an example.
+   Russell and Norvig explain a similar algorithm in their book /Artificial Intelligence--A Modern Approach/ with the statement, "trying to find the top of Mount Everest in a thick fog while suffering from amnesia" [[cite:russel2010pearson]]. Except, in our case, we are trying to find the base-camp in a thick fog with amnesia, i. e., going down. We can't see too far, we don't remember where we came from, but we have a sense of downwards direction. We just know that if we keep stepping (making nudges) in the downwards direction, we shall eventually reach a local minimum. This idea is the very key to finding the correct weights and biases. Calculus students know this rate of change as the derivative and most algebra students know it as the slope. We never get into algorithms to minimise the simple derivatives or slopes because we can just set them equal to zero and solve. But, in order to illustrate the algorithm, let's consider a simple polynomial as an example.
 
 ** Descending the Derivative of a Parabola
 
-Take this function $g(x) = x^2$, we know that the derivative is $2x$ and $2x = 0 \iff x = 0$ hence $x = 0 \Rightarrow g(x) = 0$. We can do this because $g$ has such a nice and simple definition. What if it did not have this nice and simple definition like our network $f$. We could do what we just talked about, start at some random $x_0$ and make small $\eta$ sized nudges to it using the negative derivative: $x_{n+1} = x_n - \eta g'(x_n)$ as shown in figure [[fig:derivative-descent]]. The small nudge to the initial $x_0$ gives us $x_1$ and then we calculate $-\eta g'(x_1)$ to figure out the nudge we want to make to $x_1$ and the series continues till we find some $x_i$ for which $g(x_i)$ is small enough.
+Take this function $g(x) = x^2$, we know that the derivative is $2x$ and $2x = 0 \iff x = 0$ hence $x = 0 \Rightarrow g(x) = 0$. We can do this because $g$ has such a nice and simple definition. What $g$ it did not have this nice and simple definition like our network $f$. We could do what we just talked about, start at some random $x_0$ and make small $\eta$ sized nudges to it using the negative derivative: $x_{n+1} = x_n - \eta g'(x_n)$ as shown in figure [[fig:derivative-descent]]. The small nudge to the initial $x_0$ gives us $x_1$ and then we calculate $-\eta g'(x_1)$ to figure out the nudge we want to make to $x_1$ and the series continues till we find some $x_i$ for which $g(x_i)$ is small enough.
 
    #+CAPTION: Derivative descent
    #+NAME:   fig:derivative-descent
@@ -60,7 +60,7 @@ Take this function $g(x) = x^2$, we know that the derivative is $2x$ and $2x = 0
 
 * Gradient Descent
 
-  If our function is a polynomial of more than two variables: $\vec{p} = [p_1,p_2,...,p_n]$ then to figure out the nudges we use gradients instead of the derivatives. The gradient of some function $h(\vec{p})$ is denoted as a vector of partial derivatives using the symbol nabla: $\nabla$.
+  If our function is a polynomial of more than two variables: $\vec{p} = [p_1,p_2,...,p_n]$ then to figure out the nudges we use gradients instead of the derivatives. The gradient of some function $h(\vec{p})$ is denoted as a vector of partial derivatives using the symbol /nabla/: $\nabla$.
 
   \[
   \nabla h(\vec{p})
@@ -142,7 +142,7 @@ Step:  6, (a, b): (0.016, 0.016) Error: 0.0033554
   2. Let $(\mathcal{W}, \mathbf{b})_{i+1} = (\mathcal{W}, \mathbf{b})_{i} \circleddash \eta \nabla E(\mathcal W_i, \mathbf b_i, \vec{x}_i)$[fn:2].
   3. Repeat step 2 for all $i$.
 
-  For the stochastic gradient descent, we first shuffle $\mathcal{X}$ and then split it down into smaller subsets we call /mini-batches/. We'll denote a single mini-batch as $\mathcal{B}_i \subset \mathcal{X}$. We passed the size of a single mini-batch to our ~Network~ class with the variable ~bt_size~. Let's include a generator function in the Python class which will shuffle ~X~ and then yield $\mathcal{B}_i$'s till it runs out.
+  For the stochastic gradient descent, we first shuffle $\mathcal{X}$ and then split it down into smaller subsets we call /mini-batches/. We'll denote a single mini-batch as $\mathcal{B}_i \subset \mathcal{X}$. We passed the size of a single mini-batch to our ~Network~ class with the variable ~bt_size~. Let's include a generator function in the Python class which will shuffle ~X~ and then yield $\mathcal{B}_i$'s until it runs out.
 
   #+CAPTION: Mini-batch $\mathcal{B}_i$ dispenser of size ~bt_size~
   #+ATTR_LATEX: :options frame=single
@@ -171,7 +171,7 @@ Step:  6, (a, b): (0.016, 0.016) Error: 0.0033554
      \]
   3. Repeat step 2 for all $i$.
 
-  The step two above looks a bit intimidating. But, the code that implements it looks a lot better. Let's implement the stochastic gradient descent.
+  The step two above looks a bit intimidating; but the code that implements it looks a lot better. Let's implement the stochastic gradient descent.
 
   #+CAPTION: Stochastic Gradient Descent
   #+ATTR_LATEX: :options frame=single
@@ -208,7 +208,7 @@ Step:  6, (a, b): (0.016, 0.016) Error: 0.0033554
   \Bigg[\frac{\partial E}{\partial W^{(L)}}, \frac{\partial E}{\partial \vec{b}^{(L)}}, \frac{\partial E}{\partial W^{(L-1)}}, \frac{\partial E}{\partial \vec{b}^{(L-1)}}, ... , \frac{\partial E}{\partial W^{(2)}}, \frac{\partial E}{\partial \vec{b}^{(2)}}\Bigg]
   \]
 
-Backpropagation is the algorithm we use to calculate the above gradient. We'll demonstrate it with a small example. Let's architect a network to classify a ten bit binary number as even (True) or odd (False). Note that some of the choices in this architecture will be made not for the sake of solving the problem optimally but for the illustration of the appropriate concepts. For a total of $L = 3$ layers, put ten neurons in the input layer to hold the activation caused by the ten bits. There are three neurons in the hidden layer. Finally, two neurons in the output layer to output the probability of an input $\vec{x}$ (which is a binary number) being even or odd, i. e., $\vec{a}^{(3)} = [0, 1]$ for even and $\vec{a}^{(3)} = [1, 0]$ for odd.
+Backpropagation is the algorithm we use to calculate the above gradient. We'll demonstrate it with a small example. Let's architect a network to classify a ten bit binary number as even (True) or odd (False). Note that some of the choices in this architecture will be made not for the sake of solving the problem optimally, but for the illustration of the appropriate concepts. For a total of $L = 3$ layers, put ten neurons in the input layer to hold the activation caused by the ten bits. There are three neurons in the hidden layer. Finally, two neurons in the output layer to output the probability of an input $\vec{x}$ (which is a binary number) being even or odd, i. e., $\vec{a}^{(3)} = [0, 1]$ for even and $\vec{a}^{(3)} = [1, 0]$ for odd.
 
    #+CAPTION: Multi-layer Perceptron to classify ten bit binary numbers per parity
    #+NAME:   fig:mlp-bin
@@ -247,7 +247,7 @@ For the network in figure [[fig:mlp-bin]], we have the following weights, biases
      & = \frac{\partial (\vec{y} - \vec{a}^{(L)})^2}{\partial W^{(L)}} \\
    \end{align*}
 
-   We have a composite function: $(\vec{y} - \vec{a}^{(L)})^2$. We'll need the [[https://en.wikipedia.org/wiki/Chain_rule][chain rule]] to move on. The application of chain rule here needs a little care. You maybe already able to take polynomial derivatives with the chain rule without thinking much of it. But, in order to truly understand its application here, the reader should not only be able to apply the chain rule to the polynomials but be aware of the steps they are taking in terms of its notation. Here is a nice [[https://math.stackexchange.com/a/3696249/783364][example]] that walks us throw the chain rule in [[https://en.wikipedia.org/wiki/Leibniz%27s_notation][Leibniz's notation]][fn:4] which is what we'll be using. We state the chain rule.
+   We have a composite function: $(\vec{y} - \vec{a}^{(L)})^2$. We'll need the [[https://en.wikipedia.org/wiki/Chain_rule][chain rule]] to move on. The application of chain rule here needs a little care. You might already be able to take polynomial derivatives using the chain rule without thinking much of it; but, in order to truly understand its application here, the reader should not only be able to apply the chain rule to the polynomials but also be aware of the steps they are taking in terms of its notation. Here is a nice [[https://math.stackexchange.com/a/3696249/783364][example]] that walks us through the chain rule in [[https://en.wikipedia.org/wiki/Leibniz%27s_notation][Leibniz's notation]][fn:4], which is what we'll be using. We state the chain rule.
 
    \[
    \frac{\operatorname{d} f \circ g (x)}{\operatorname{d} x}
@@ -357,7 +357,7 @@ For the network in figure [[fig:mlp-bin]], we have the following weights, biases
    \end{align}
 
 ** Backpropagation
-   The only thing keeping us from running the implementation of the stochastic gradient decent was the lack of a way to calculate the gradient of the error function $E$. That is no longer true! We have a plan of attack. We do a forward pass using some $\vec{x} \in \mathcal{B}_i$ and then we use equations (1), (2) and (3) to calculate the layer $L$ partial derivative in the gradient. From there we use the $\delta^{(L)}$ to recursively keep calculating $\delta^{(l)}$ to be used in equations (4), (5) and (6) in order to calculate the rest of the partial derivatives backwards. This /backwards pass/ is why we call this algorithm /Backpropagation/. Let's implement backpropagation for $\vec{x} \in \mathcal{B}_i$.
+   The only thing keeping us from running the implementation of the stochastic gradient descent was the lack of a way to calculate the gradient of the error function $E$. That is no longer true! We have a plan of attack. We do a forward pass using some $\vec{x} \in \mathcal{B}_i$ and then we use equations (1), (2) and (3) to calculate the layer $L$ partial derivative in the gradient. From there, we use the $\delta^{(L)}$ to recursively keep calculating $\delta^{(l)}$ to be used in equations (4), (5) and (6) in order to calculate the rest of the partial derivatives backwards. This /backwards pass/ is why we call this algorithm /Backpropagation/. Let's implement backpropagation for $\vec{x} \in \mathcal{B}_i$.
 
    #+CAPTION: Backpropagation
    #+ATTR_LATEX: :options frame=single
@@ -389,7 +389,7 @@ For the network in figure [[fig:mlp-bin]], we have the following weights, biases
    #+END_SRC
 
 * Wrapping Up the Python Class
-  We are done with the mathematics of the Multi-layer Perceptron. However, we still need to add a few functions to our Python class. In order to train the network, we run multiple round of the stochastic gradient decent using differently permuted ~X, y~ each time to produce the batches. The ~Network~ class figures out the number of ~self.SGD(...)~ calls by the variable ~epochs~ passed to the ~__init__~ definition. This function is usually named something along the lines of ~train(...)~, but we'll make our network [[https://soundcloud.com/rana-m-sholkamy/el-choclo][tango]] instead.
+  We are done with the mathematics of the Multi-layer Perceptron. However, we still need to add a few functions to our Python class. In order to train the network, we run multiple rounds of the stochastic gradient decent using differently permuted ~X, y~ each time to produce the batches. The ~Network~ class figures out the number of ~self.SGD(...)~ calls by the variable ~epochs~ passed to the ~__init__~ definition. This function is usually named something along the lines of ~train(...)~, but we'll make our network [[https://soundcloud.com/rana-m-sholkamy/el-choclo][tango]] instead.
 
    #+CAPTION: Training function
    #+ATTR_LATEX: :options frame=single
