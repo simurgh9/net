@@ -389,7 +389,7 @@ For the network in figure [[fig:mlp-bin]], we have the following weights, biases
    #+END_SRC
 
 * Wrapping Up the Python Class
-  We are done with the mathematics of the Multi-layer Perceptron. However, we still need to add a few functions to our Python class. In order to train the network, we run multiple rounds of the stochastic gradient decent using differently permuted ~X, y~ each time to produce the batches. The ~Network~ class figures out the number of ~self.SGD(...)~ calls by the variable ~epochs~ passed to the ~__init__~ definition. This function is usually named something along the lines of ~train(...)~, but we'll make our network [[https://soundcloud.com/rana-m-sholkamy/el-choclo][tango]] instead.
+  We are done with the mathematics of the Multi-layer Perceptron. However, we still need to add a few functions to our Python class. In order to train the network, we run multiple rounds of the stochastic gradient descent using differently permuted ~X, y~ each time to produce the batches. The ~Network~ class figures out the number of ~self.SGD(...)~ calls by the variable ~epochs~ passed to the ~__init__~ definition. This function is usually named something along the lines of ~train(...)~, but we'll make our network [[https://soundcloud.com/rana-m-sholkamy/el-choclo][tango]] instead.
 
    #+CAPTION: Training function
    #+ATTR_LATEX: :options frame=single
